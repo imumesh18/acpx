@@ -192,7 +192,7 @@ fn process_exists(pid: u32) -> bool {
 #[cfg(windows)]
 fn process_exists(pid: u32) -> bool {
     let output = std::process::Command::new("tasklist")
-        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+        .args(["/FI", &format!("PID eq {pid}"), "/fo", "CSV", "/NH"])
         .output()
         .expect("tasklist should run");
     let stdout = String::from_utf8_lossy(&output.stdout);

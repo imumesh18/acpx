@@ -5,6 +5,11 @@ Read this file first.
 ## Repo map
 
 - `src/lib.rs`: crate entrypoint and crate-level documentation.
+- `src/acpx.rs`: subprocess-backed ACP connection wrapper.
+- `src/agent_server.rs`: handwritten launch contract and manual command server.
+- `src/agent_servers.rs`: generated ACP registry snapshot.
+- `src/registry.rs`: raw registry lookup and platform mapping layer.
+- `examples/cli.rs`: single-shot integration harness for real agents.
 - `scripts/`: repo-local automation for quality gates and release preparation.
 - `.ref/`: ignored reference checkouts and copied upstream implementations.
 - `SPEC.md`: current public contract for the crate.
@@ -17,11 +22,14 @@ Read this file first.
 - `typos`
 - `just fmt`
 - `just fmt-check`
+- `just registry-sync`
+- `just example-test`
 - `just ref-clone <url> [name]`
 - `just ref-copy <source> <name>`
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `cargo nextest run --all --all-features --locked --no-tests pass`
 - `cargo test --doc --all-features --locked`
+- `cargo test --example cli --all-features --locked`
 - `cargo deny check`
 - `cargo build --all --all-features --locked`
 

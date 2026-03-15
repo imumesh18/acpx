@@ -59,7 +59,7 @@ The first ACP-focused release of `acpx` should provide:
 - an `agent_server` module with a small trait-based contract for launchable ACP
   agent definitions,
 - a `registry` module backed by a generated snapshot of the official ACP
-  registry,
+  registry and preserving the official registry ids,
 - an example CLI in `examples/cli.rs` for local integration testing and manual
   protocol verification.
 
@@ -205,7 +205,9 @@ Generation rules:
 - the generator fetches the official registry JSON from the ACP CDN and writes
   generated Rust source into the repository,
 - the generated source is committed so normal crate builds stay offline and
-  deterministic.
+  deterministic,
+- generated `npx` launches should be non-interactive so first-run installs do
+  not block on confirmation prompts.
 
 Connection rules:
 
@@ -219,6 +221,11 @@ Connection rules:
 This keeps the registry module simple and honest. It provides real value for
 lookup, listing, inspection, and launch of package-backed agents without
 turning the crate into an installer or package manager.
+
+Consumer-facing naming policy is explicitly out of scope for the library. If a
+CLI or application wants friendlier ids such as `droid` instead of
+`factory-droid`, that mapping belongs in the consumer layer, not in the core
+`acpx::registry` API.
 
 ### `examples/cli.rs`
 
@@ -237,6 +244,8 @@ Requirements:
 
 - place it in `examples/cli.rs`,
 - keep its interface intentionally simple and disposable,
+- allow it to define its own input aliases over raw registry ids when that
+  improves ergonomics for manual testing,
 - allow it to use a concrete async runtime if that keeps the example small,
   even though the library remains runtime agnostic.
 
@@ -297,6 +306,19 @@ The following are intentionally outside the first spec:
 
 ## Current code status
 
-The repository is still in specification mode. No ACP-facing library API is
-implemented yet, and this document defines the target behavior that `PLAN.md`
-should break into implementation steps next.
+The first ACP-focused vertical slice is implemented:
+
+- `acpx::Connection` launches local subprocess agents over stdio, forwards the
+  upstream ACP methods, captures `session/update` notifications, and owns
+  shutdown.
+- `agent_server` exposes a handwritten runtime-neutral launch contract plus a
+  manual command-backed server.
+- `agent_servers` is generated from the official ACP registry and committed to
+  the repository.
+- `registry` provides raw lookup and typed host-platform helpers on top of the
+  generated registry snapshot.
+- `examples/cli.rs` provides a single-shot CLI harness for manual integration
+  testing.
+
+The crate remains pre-`1.0.0`, so the public API may still change as follow-up
+work improves the transport boundary, installer story, and overall ergonomics.

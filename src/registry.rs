@@ -2,23 +2,25 @@ use std::env;
 
 use thiserror::Error;
 
-use crate::agent_server::AgentServer;
-use crate::agent_servers::{
-    GeneratedAgentServer, GeneratedBinaryTarget, REGISTRY_VERSION, generated_agent_server,
-    generated_agent_servers,
+use crate::{
+    agent_server::AgentServer,
+    agent_servers::{
+        REGISTRY_VERSION, RegistryAgentServer, RegistryBinaryTarget, registry_agent_server,
+        registry_agent_servers,
+    },
 };
 
-const COPILOT_ALIAS: &str = "copilot";
-const COPILOT_CANONICAL_ID: &str = "github-copilot-cli";
-const HIDDEN_CURATED_NAMES: &[&str] = &["github-copilot"];
+pub use crate::agent_servers::{
+    RegistryDistribution, RegistryPackageDistribution, RegistryPackageManager,
+};
 
-/// Typed failures from the curated registry mapping layer.
+/// Typed failures from registry lookup and host-platform helpers.
 #[derive(Clone, Debug, PartialEq, Eq, Error)]
 pub enum RegistryError {
-    /// The curated registry does not resolve the requested name.
-    #[error("curated agent `{id}` was not found")]
-    UnknownAgent {
-        /// The unresolved agent name, alias, or identifier.
+    /// The generated registry snapshot does not contain the requested id.
+    #[error("agent server `{id}` was not found")]
+    UnknownAgentServer {
+        /// The unresolved official ACP registry id.
         id: String,
     },
 
@@ -33,9 +35,9 @@ pub enum RegistryError {
 
     /// A binary-backed registry entry does not provide a build for the
     /// requested host target.
-    #[error("agent `{id}` does not publish a binary for host platform `{target}`")]
+    #[error("agent server `{id}` does not publish a binary for host platform `{target}`")]
     MissingBinaryTarget {
-        /// The registry id for the agent.
+        /// The registry id for the agent server.
         id: String,
         /// The official ACP registry target triple.
         target: String,
@@ -95,44 +97,28 @@ pub fn registry_version() -> &'static str {
     REGISTRY_VERSION
 }
 
-/// Returns the canonical registry id for a curated alias.
+/// Returns the generated registry agent-server definitions.
 #[must_use]
-pub fn alias_target(alias: &str) -> Option<&'static str> {
-    match alias {
-        COPILOT_ALIAS => Some(COPILOT_CANONICAL_ID),
-        _ => None,
-    }
+pub fn agent_servers() -> Vec<RegistryAgentServer> {
+    registry_agent_servers()
 }
 
-/// Returns the curated agent catalog used by the public registry layer.
+/// Resolves an official ACP registry id into a generated agent-server
+/// definition.
 #[must_use]
-pub fn curated_agent_servers() -> Vec<GeneratedAgentServer> {
-    generated_agent_servers()
+pub fn agent_server(id: &str) -> Option<RegistryAgentServer> {
+    registry_agent_server(id)
 }
 
-/// Resolves a curated registry id or alias into a generated agent server.
-#[must_use]
-pub fn lookup(id_or_alias: &str) -> Option<GeneratedAgentServer> {
-    if HIDDEN_CURATED_NAMES.contains(&id_or_alias) {
-        return None;
-    }
-
-    alias_target(id_or_alias)
-        .and_then(generated_agent_server)
-        .or_else(|| generated_agent_server(id_or_alias))
-}
-
-/// Resolves a curated registry id or alias and returns a typed lookup error on
+/// Resolves an official ACP registry id and returns a typed lookup error on
 /// failure.
 ///
 /// # Errors
 ///
-/// Returns [`RegistryError::UnknownAgent`] when the curated registry does not
-/// resolve the requested name.
-pub fn require(id_or_alias: &str) -> Result<GeneratedAgentServer, RegistryError> {
-    lookup(id_or_alias).ok_or_else(|| RegistryError::UnknownAgent {
-        id: id_or_alias.to_owned(),
-    })
+/// Returns [`RegistryError::UnknownAgentServer`] when the generated registry
+/// snapshot does not contain the requested id.
+pub fn require_agent_server(id: &str) -> Result<RegistryAgentServer, RegistryError> {
+    agent_server(id).ok_or_else(|| RegistryError::UnknownAgentServer { id: id.to_owned() })
 }
 
 /// Resolves the current host into a known ACP registry target.
@@ -146,46 +132,46 @@ pub fn host_platform() -> Result<HostPlatform, RegistryError> {
 }
 
 /// Resolves the registry binary target for the current host when the agent
-/// publishes binaries.
+/// server publishes binaries.
 ///
-/// Package-backed agents return `Ok(None)`.
+/// Package-backed agent servers return `Ok(None)`.
 ///
 /// # Errors
 ///
 /// Returns [`RegistryError::UnsupportedHostPlatform`] when the current host is
 /// not mapped in v0, or [`RegistryError::MissingBinaryTarget`] when the agent
-/// publishes binaries but not for the current host target.
+/// server publishes binaries but not for the current host target.
 pub fn host_binary_target(
-    agent: &GeneratedAgentServer,
-) -> Result<Option<&GeneratedBinaryTarget>, RegistryError> {
-    binary_target_for(agent, host_platform()?)
+    agent_server: &RegistryAgentServer,
+) -> Result<Option<&RegistryBinaryTarget>, RegistryError> {
+    binary_target_for(agent_server, host_platform()?)
 }
 
 /// Resolves the registry binary target for a specific host platform when the
-/// agent publishes binaries.
+/// agent server publishes binaries.
 ///
-/// Package-backed agents return `Ok(None)`.
+/// Package-backed agent servers return `Ok(None)`.
 ///
 /// # Errors
 ///
-/// Returns [`RegistryError::MissingBinaryTarget`] when the agent publishes
-/// binaries but not for the requested host target.
+/// Returns [`RegistryError::MissingBinaryTarget`] when the agent server
+/// publishes binaries but not for the requested host target.
 pub fn binary_target_for(
-    agent: &GeneratedAgentServer,
+    agent_server: &RegistryAgentServer,
     platform: HostPlatform,
-) -> Result<Option<&GeneratedBinaryTarget>, RegistryError> {
-    let binaries = agent.distribution().binary_targets();
-    if binaries.is_empty() {
+) -> Result<Option<&RegistryBinaryTarget>, RegistryError> {
+    let binary_targets = agent_server.distribution().binary_targets();
+    if binary_targets.is_empty() {
         return Ok(None);
     }
 
-    binaries
+    binary_targets
         .iter()
         .find(|target| target.target() == platform.registry_target())
         .map_or_else(
             || {
                 Err(RegistryError::MissingBinaryTarget {
-                    id: agent.metadata().id().to_owned(),
+                    id: agent_server.id().to_owned(),
                     target: platform.registry_target().to_owned(),
                 })
             },

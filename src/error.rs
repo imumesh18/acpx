@@ -20,6 +20,16 @@ pub enum Error {
         source: io::Error,
     },
 
+    /// The requested local launcher is not installed or not on `PATH`.
+    #[error("launcher `{launcher}` was not found")]
+    MissingLauncher {
+        /// The missing launcher or executable name.
+        launcher: String,
+        /// The underlying I/O error from process creation.
+        #[source]
+        source: io::Error,
+    },
+
     /// The spawned agent process did not expose a piped stdin handle.
     #[error("agent process stdin was not captured")]
     MissingChildStdin,
@@ -75,7 +85,9 @@ pub enum UnsupportedLaunch {
 
 #[cfg(test)]
 mod tests {
-    use super::UnsupportedLaunch;
+    use std::io;
+
+    use super::{Error, UnsupportedLaunch};
 
     #[test]
     fn unsupported_launch_messages_are_stable() {
@@ -89,6 +101,14 @@ mod tests {
             }
             .to_string(),
             "launch command `brew` is not supported in v0"
+        );
+        assert_eq!(
+            Error::MissingLauncher {
+                launcher: "npx".into(),
+                source: io::Error::from(io::ErrorKind::NotFound),
+            }
+            .to_string(),
+            "launcher `npx` was not found"
         );
     }
 }

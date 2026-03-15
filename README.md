@@ -7,13 +7,14 @@ The repo starts at version `0.0.1` as the first intentional release.
 
 ## Status
 
-- This repository is in spec and planning mode for its first ACP-focused
-  release.
-- `SPEC.md` defines the intended crate contract and `PLAN.md` defines the
-  ordered work to get there.
-- ACP feature implementation has not started yet.
-- The current Rust code and any API sketches in docs should be treated as
-  provisional, not as the final public shape of the library.
+- The first ACP-focused vertical slice is implemented.
+- The crate currently ships a subprocess-backed `Connection`, a handwritten
+  `AgentServer` contract, a generated ACP registry snapshot, a raw-id
+  `registry` module, and a single-shot example CLI.
+- `SPEC.md` records the intended contract and `PLAN.md` records the completed
+  delivery plan plus follow-up notes.
+- The current Rust code is usable for local experimentation, but the public API
+  is still provisional.
 - Before `1.0.0`, breaking changes are acceptable if they produce a better
   contract.
 
@@ -44,21 +45,38 @@ These are the current primary references for planning:
 
 ## Current Scope
 
-The repo currently contains setup, release automation, reference checkouts, and
-planning material. We are not committing to a stable ACP-facing API yet.
+- Local ACP subprocess agents over stdio.
+- Package-backed registry entries launched via `npx` or `uvx`.
+- Binary-only registry entries that remain discoverable but return a typed
+  unsupported-launch error in v0.
+- Library registry helpers that preserve the official ACP registry ids.
+- A disposable example CLI in [`examples/cli.rs`](examples/cli.rs) for manual
+  integration testing.
 
-## Not Yet For Use
+## Still Changing
 
-Do not consume `acpx` as a published SDK yet. Until the ACP-facing spec exists
-and the first intentional release is cut, this repo is a design and planning
-workspace.
+Do not treat `acpx` as a stable published SDK yet. The crate is intentionally
+pre-`1.0.0`, the installer story for binary registry distributions is deferred,
+and the transport boundary may still be refined.
 
-## Future Installation
+## Installation
 
 ```toml
 [dependencies]
 acpx = "0.0.1"
 ```
+
+## Example CLI
+
+```sh
+cargo run --example cli -- codex "Summarize this repository" --cwd "$(pwd)"
+```
+
+The example CLI accepts raw registry ids and a small CLI-local alias table, so
+inputs such as `codex`, `droid`, and `vibe` resolve to the official
+registry ids before launch. It then initializes the agent, creates a session,
+optionally applies `--mode` and `--permission-mode`, prints streamed
+`session/update` notifications, and closes cleanly.
 
 ## Development
 
@@ -71,6 +89,9 @@ Common commands:
 - `just fmt` formats Rust, Markdown, YAML, and TOML files.
 - `just fmt-check` checks Rust, Markdown, YAML, and TOML formatting.
 - `just ci` runs the full local quality gate.
+- `just registry-sync` refreshes `src/agent_servers.rs` from the official ACP
+  registry snapshot.
+- `just example-test` runs the example CLI smoke test.
 - `just typos` runs source and docs spell checking.
 - `just changelog` regenerates `CHANGELOG.md` from the current git history.
 - `just next-version` prints the next version suggested by `git-cliff`.

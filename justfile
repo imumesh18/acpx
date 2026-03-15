@@ -26,6 +26,9 @@ nextest:
 doctest:
   cargo test --doc --all-features --locked
 
+example-test:
+  cargo test --example cli --all-features --locked
+
 audit:
   cargo deny check
 

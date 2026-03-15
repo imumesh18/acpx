@@ -4,37 +4,46 @@ use acpx::{
     AgentServer, Error, RuntimeContext, UnsupportedLaunch,
     agent_servers::REGISTRY_VERSION,
     registry::{
-        HostPlatform, RegistryError, alias_target, binary_target_for, curated_agent_servers,
-        lookup, registry_version, require,
+        HostPlatform, RegistryError, agent_server, agent_servers, binary_target_for,
+        registry_version, require_agent_server,
     },
 };
 
 #[test]
-fn curated_lookup_resolves_ids_and_aliases() {
-    let copilot = lookup("copilot").expect("copilot alias should resolve");
-    assert_eq!(copilot.id(), "github-copilot-cli");
-    assert_eq!(alias_target("copilot"), Some("github-copilot-cli"));
+fn agent_server_resolves_official_registry_ids() {
+    let codex = agent_server("codex-acp").expect("codex-acp should resolve");
+    assert_eq!(codex.id(), "codex-acp");
 
-    let direct = lookup("github-copilot-cli").expect("canonical id should resolve");
-    assert_eq!(direct.id(), "github-copilot-cli");
-    assert!(lookup("github-copilot").is_none());
+    let droid = agent_server("factory-droid").expect("factory-droid should resolve");
+    assert_eq!(droid.id(), "factory-droid");
+
+    assert!(agent_server("missing-agent").is_none());
     assert!(matches!(
-        require("missing-agent"),
-        Err(RegistryError::UnknownAgent { id }) if id == "missing-agent"
+        require_agent_server("missing-agent"),
+        Err(RegistryError::UnknownAgentServer { id }) if id == "missing-agent"
     ));
 }
 
 #[test]
-fn curated_listing_stays_on_the_generated_snapshot() {
-    let curated = curated_agent_servers();
-    assert!(!curated.is_empty());
+fn agent_servers_match_the_generated_snapshot() {
+    let registry_agent_servers = agent_servers();
+    assert!(!registry_agent_servers.is_empty());
     assert_eq!(registry_version(), REGISTRY_VERSION);
     assert!(
-        curated
+        registry_agent_servers
             .iter()
-            .any(|agent| agent.id() == "github-copilot-cli")
+            .any(|agent_server| agent_server.id() == "codex-acp")
     );
-    assert!(curated.iter().all(|agent| agent.id() != "github-copilot"));
+    assert!(
+        registry_agent_servers
+            .iter()
+            .any(|agent_server| agent_server.id() == "factory-droid")
+    );
+    assert!(
+        registry_agent_servers
+            .iter()
+            .any(|agent_server| agent_server.id() == "autohand")
+    );
 }
 
 #[test]
@@ -72,22 +81,22 @@ fn host_platform_mapping_covers_known_registry_targets() {
 
 #[test]
 fn binary_target_resolution_matches_platform_support() {
-    let corust = lookup("corust-agent").expect("corust-agent should resolve");
-    let target = binary_target_for(&corust, HostPlatform::LinuxX86_64)
+    let corust_agent_server = agent_server("corust-agent").expect("corust-agent should resolve");
+    let linux_x86_64_target = binary_target_for(&corust_agent_server, HostPlatform::LinuxX86_64)
         .expect("linux x86_64 should exist")
         .expect("binary target should resolve");
-    assert_eq!(target.target(), "linux-x86_64");
+    assert_eq!(linux_x86_64_target.target(), "linux-x86_64");
 
     assert!(matches!(
-        binary_target_for(&corust, HostPlatform::LinuxAarch64),
+        binary_target_for(&corust_agent_server, HostPlatform::LinuxAarch64),
         Err(RegistryError::MissingBinaryTarget { id, target })
             if id == "corust-agent" && target == "linux-aarch64"
     ));
 
-    let autohand = lookup("autohand").expect("autohand should resolve");
+    let autohand_agent_server = agent_server("autohand").expect("autohand should resolve");
     assert!(
-        binary_target_for(&autohand, HostPlatform::LinuxX86_64)
-            .expect("package-backed agents should not fail")
+        binary_target_for(&autohand_agent_server, HostPlatform::LinuxX86_64)
+            .expect("package-backed agent servers should not fail")
             .is_none()
     );
 }
@@ -95,11 +104,13 @@ fn binary_target_resolution_matches_platform_support() {
 #[test]
 fn binary_only_generated_servers_return_typed_unsupported_launch_errors() {
     let runtime = RuntimeContext::new(|_| {});
-    let amp = require("amp-acp").expect("amp-acp should resolve");
-    let error = block_on(amp.connect(&runtime)).err();
+    let amp_agent_server = require_agent_server("amp-acp").expect("amp-acp should resolve");
+    let error = block_on(amp_agent_server.connect(&runtime)).err();
 
     assert!(matches!(
         error,
-        Some(Error::UnsupportedLaunch(UnsupportedLaunch::BinaryDistribution))
+        Some(Error::UnsupportedLaunch(
+            UnsupportedLaunch::BinaryDistribution
+        ))
     ));
 }

@@ -117,7 +117,7 @@ fn render_registry_module(registry: &RegistryDocument) -> Result<String, Box<dyn
         render_agent_function(&mut rendered, agent)?;
     }
 
-    render_catalog_functions(&mut rendered, &agents)?;
+    render_registry_functions(&mut rendered, &agents)?;
 
     Ok(rendered)
 }
@@ -296,6 +296,14 @@ fn render_generated_binary_target_type(rendered: &mut String) -> Result<(), Box<
 fn render_generated_package_distribution_types(
     rendered: &mut String,
 ) -> Result<(), Box<dyn Error>> {
+    render_generated_package_manager_type(rendered)?;
+    render_generated_package_distribution_struct(rendered)?;
+    render_registry_type_aliases(rendered)?;
+
+    Ok(())
+}
+
+fn render_generated_package_manager_type(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Copy, Debug, PartialEq, Eq)]")?;
     writeln!(rendered, "pub enum GeneratedPackageManager {{")?;
     writeln!(rendered, "    Npx,")?;
@@ -323,6 +331,13 @@ fn render_generated_package_distribution_types(
     writeln!(rendered, "    }}")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
+
+    Ok(())
+}
+
+fn render_generated_package_distribution_struct(
+    rendered: &mut String,
+) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Debug, PartialEq, Eq)]")?;
     writeln!(rendered, "pub struct GeneratedPackageDistribution {{")?;
     writeln!(rendered, "    manager: GeneratedPackageManager,")?;
@@ -385,6 +400,32 @@ fn render_generated_package_distribution_types(
     Ok(())
 }
 
+fn render_registry_type_aliases(rendered: &mut String) -> Result<(), Box<dyn Error>> {
+    writeln!(
+        rendered,
+        "pub type RegistryAgentServer = GeneratedAgentServer;"
+    )?;
+    writeln!(
+        rendered,
+        "pub type RegistryDistribution = GeneratedDistribution;"
+    )?;
+    writeln!(
+        rendered,
+        "pub type RegistryBinaryTarget = GeneratedBinaryTarget;"
+    )?;
+    writeln!(
+        rendered,
+        "pub type RegistryPackageManager = GeneratedPackageManager;"
+    )?;
+    writeln!(
+        rendered,
+        "pub type RegistryPackageDistribution = GeneratedPackageDistribution;"
+    )?;
+    writeln!(rendered)?;
+
+    Ok(())
+}
+
 fn render_registry_version(rendered: &mut String, version: &str) -> Result<(), Box<dyn Error>> {
     writeln!(
         rendered,
@@ -396,7 +437,7 @@ fn render_registry_version(rendered: &mut String, version: &str) -> Result<(), B
     Ok(())
 }
 
-fn render_catalog_functions(
+fn render_registry_functions(
     rendered: &mut String,
     agents: &[RegistryAgent],
 ) -> Result<(), Box<dyn Error>> {
@@ -428,6 +469,22 @@ fn render_catalog_functions(
     }
     writeln!(rendered, "        _ => None,")?;
     writeln!(rendered, "    }}")?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+    writeln!(rendered, "#[must_use]")?;
+    writeln!(
+        rendered,
+        "pub fn registry_agent_servers() -> Vec<RegistryAgentServer> {{"
+    )?;
+    writeln!(rendered, "    generated_agent_servers()")?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+    writeln!(rendered, "#[must_use]")?;
+    writeln!(
+        rendered,
+        "pub fn registry_agent_server(id: &str) -> Option<RegistryAgentServer> {{"
+    )?;
+    writeln!(rendered, "    generated_agent_server(id)")?;
     writeln!(rendered, "}}")?;
 
     Ok(())
@@ -589,6 +646,8 @@ mod tests {
 
         assert_eq!(first, second);
         assert!(first.contains("pub const REGISTRY_VERSION: &str = \"1.0.0\";"));
+        assert!(first.contains("pub type RegistryAgentServer = GeneratedAgentServer;"));
+        assert!(first.contains("pub fn registry_agent_servers() -> Vec<RegistryAgentServer> {"));
         assert!(first.contains("pub fn agent_alpha_agent()"));
         assert!(first.contains("pub fn agent_zeta_agent()"));
         assert!(first.contains("Self::Npx => &[\"--yes\"]"));

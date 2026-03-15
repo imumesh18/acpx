@@ -1,5 +1,6 @@
 [default.extend-words]
 acpx = "acpx"
+fo = "fo"
 
 [default.extend-identifiers]
 ACPX = "ACPX"

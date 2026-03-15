@@ -50,7 +50,16 @@ impl acp::Agent for FixtureAgent {
 
         Ok(acp::NewSessionResponse::new(acp::SessionId::new(format!(
             "fixture-session-{session_number}"
-        ))))
+        )))
+        .config_options(vec![acp::SessionConfigOption::select(
+            "permission-mode",
+            "Permission Mode",
+            "ask",
+            vec![
+                acp::SessionConfigSelectOption::new("ask", "Ask"),
+                acp::SessionConfigSelectOption::new("auto-edit", "Auto Edit"),
+            ],
+        )]))
     }
 
     async fn load_session(

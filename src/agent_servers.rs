@@ -175,6 +175,12 @@ impl GeneratedPackageDistribution {
     }
 }
 
+pub type RegistryAgentServer = GeneratedAgentServer;
+pub type RegistryDistribution = GeneratedDistribution;
+pub type RegistryBinaryTarget = GeneratedBinaryTarget;
+pub type RegistryPackageManager = GeneratedPackageManager;
+pub type RegistryPackageDistribution = GeneratedPackageDistribution;
+
 pub const REGISTRY_VERSION: &str = "1.0.0";
 
 #[must_use]
@@ -783,4 +789,14 @@ pub fn generated_agent_server(id: &str) -> Option<GeneratedAgentServer> {
         "stakpak" => Some(agent_stakpak()),
         _ => None,
     }
+}
+
+#[must_use]
+pub fn registry_agent_servers() -> Vec<RegistryAgentServer> {
+    generated_agent_servers()
+}
+
+#[must_use]
+pub fn registry_agent_server(id: &str) -> Option<RegistryAgentServer> {
+    generated_agent_server(id)
 }

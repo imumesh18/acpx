@@ -9,6 +9,7 @@
 - `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked`
 - `cargo nextest run --all --all-features --locked --no-tests pass`
 - `cargo test --doc --all-features --locked`
+- `cargo test --example cli --all-features --locked`
 - `cargo deny check`
 - `cargo build --all --all-features --locked`
 
@@ -66,8 +67,8 @@
 
 ## CI
 
-- `ci.yml` runs spell check, format, clippy, docs, nextest, doctests, build,
-  and MSRV checks.
+- `ci.yml` runs spell check, format, clippy, docs, nextest, doctests, the CLI
+  example smoke test, build, and MSRV checks.
 - `audit.yml` runs `cargo deny check`.
 - `publish.yml` verifies the tag matches `Cargo.toml`, validates the checked-in
   changelog against `git-cliff`, always runs `cargo publish --dry-run`,

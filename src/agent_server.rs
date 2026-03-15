@@ -1,8 +1,8 @@
-use std::{path::PathBuf, process::Command as StdCommand};
+use std::{io::ErrorKind, path::PathBuf, process::Command as StdCommand};
 
 use async_process::Command;
 
-use crate::{Connection, Result, RuntimeContext, Task};
+use crate::{Connection, Error, Result, RuntimeContext, Task};
 
 /// Descriptive metadata for a launchable ACP agent.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -244,7 +244,15 @@ impl AgentServer for CommandAgentServer {
     fn connect<'a>(&'a self, runtime: &'a RuntimeContext) -> Task<'a, Result<Connection>> {
         Box::pin(async move {
             let mut command = self.command.to_command();
-            Connection::spawn(&mut command, runtime)
+            match Connection::spawn(&mut command, runtime) {
+                Err(Error::SpawnProcess { source }) if source.kind() == ErrorKind::NotFound => {
+                    Err(Error::MissingLauncher {
+                        launcher: self.command.program().to_owned(),
+                        source,
+                    })
+                }
+                result => result,
+            }
         })
     }
 }
@@ -280,7 +288,12 @@ impl From<StdCommand> for CommandSpec {
 
 #[cfg(test)]
 mod tests {
-    use super::{AgentMetadata, CommandSpec};
+    use std::path::PathBuf;
+
+    use futures::executor::block_on;
+
+    use super::{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec};
+    use crate::{Error, RuntimeContext};
 
     #[test]
     fn metadata_builder_sets_optional_fields() {
@@ -309,5 +322,22 @@ mod tests {
         assert_eq!(spec.cwd_ref(), Some(&PathBuf::from("/tmp/project")));
     }
 
-    use std::path::PathBuf;
+    #[test]
+    fn command_agent_server_surfaces_missing_launchers() {
+        let runtime = RuntimeContext::new(|task| {
+            block_on(task);
+        });
+        let server = CommandAgentServer::new(
+            AgentMetadata::new("missing", "Missing Launcher", "0.0.1"),
+            CommandSpec::new("acpx-launcher-that-should-not-exist"),
+        );
+
+        let error = block_on(server.connect(&runtime)).err();
+
+        assert!(matches!(
+            error,
+            Some(Error::MissingLauncher { launcher, .. })
+                if launcher == "acpx-launcher-that-should-not-exist"
+        ));
+    }
 }
