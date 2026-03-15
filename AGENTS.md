@@ -8,12 +8,14 @@ Read this file first.
 - `src/acpx.rs`: subprocess-backed ACP connection wrapper.
 - `src/agent_server.rs`: handwritten launch contract and manual command server.
 - `src/agent_servers.rs`: generated agent-server catalog, metadata, and platform helpers.
+- `src/bin/registry-sync.rs`: registry snapshot generator.
 - `examples/cli.rs`: single-shot integration harness for real agents.
-- `scripts/`: repo-local automation for quality gates and release preparation.
+- `docs/GETTING_STARTED.md`: user-facing setup and usage guide.
+- `docs/MAINTENANCE.md`: maintainer workflows and CI and release behavior.
+- `scripts/`: repo-local automation for quality gates, registry sync, and release preparation.
 - `.ref/`: ignored reference checkouts and copied upstream implementations.
 - `SPEC.md`: current public contract for the crate.
-- `PLAN.md`: current execution plan and open follow-up work.
-- `docs/MAINTENANCE.md`: quality gates, release checklist, and CI behavior.
+- `PLAN.md`: forward-looking roadmap and open design work.
 
 ## Commands
 
@@ -35,19 +37,19 @@ Read this file first.
 ## Rules
 
 - Keep the crate on Rust 2024 and honor the MSRV in `Cargo.toml`.
-- Keep repo guidance minimal and update it only when the project actually grows.
+- Keep repo guidance minimal and delete stale context instead of preserving it.
+- Keep docs in sync with code, tests, and CI behavior.
 - Put durable behavior in code, tests, CI, or these root docs instead of chat.
 - Keep tests deterministic and independent of network, time, ordering, and host state.
 - Do not add `unsafe`; the manifest forbids it.
 - Prefer typed errors and a small dependency graph.
 - Use `.ref/` for ignored reference or copied upstream code; never commit it.
-- Follow conventional commits. The first repo setup commit is `init: abracadabra`.
+- Follow conventional commits.
 - Commit messages and bodies should explain intent, not just the file changes.
 - Keep history linear and modular: prefer unit commits that each stand on their
   own, pass checks, and deliver a coherent slice of value.
 - Split feature work into ordered commits where each step is independently
   working and includes the code, tests, and docs needed for that step.
-- Keep the repo baseline aligned with `0.0.1` as the first intentional release.
 - Release prep commits use `chore(release): vX.Y.Z` and tags use `vX.Y.Z`.
 - Treat the ACP protocol spec, ACP Rust SDK, ACP registry, and ACP docs as the
   primary external references when planning behavior.

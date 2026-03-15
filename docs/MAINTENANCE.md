@@ -1,10 +1,12 @@
 # Maintenance
 
-## Quality gates
+## Local Quality Gates
 
-- `just ci`
+Use `just ci` as the default local gate. It currently runs:
+
 - `typos`
-- `just fmt-check`
+- `cargo fmt --all -- --check`
+- Oxfmt checks for Markdown, TOML, and YAML
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked`
 - `cargo nextest run --all --all-features --locked --no-tests pass`
@@ -13,65 +15,53 @@
 - `cargo deny check`
 - `cargo build --all --all-features --locked`
 
-## Working defaults
+Useful single-purpose commands:
 
-- Make it work first, then make it beautiful, then make it fast.
-- Leave the codebase better than you found it.
-- Prefer simple code over clever code.
-- Plan and spec ACP behavior before implementing it.
-- Before `1.0.0`, prefer a better contract over preserving an early draft API.
-- Treat API sketches in planning docs as illustrative until the implementation
-  proves the final shape.
-- Write meaningful tests from the spec and add only the level of testing that
-  buys real confidence.
-- Minimize third-party dependencies; copy or internalize code only when the
-  maintenance tradeoff is clearly better than depending on a crate.
-- Remove setup code that stops matching the intended ACP product direction.
+- `just fmt`
+- `just fmt-check`
+- `just registry-sync`
+- `just example-test`
+- `just publish-dry-run`
 
-## Reference code
+## CI Workflows
 
-- `.ref/` is reserved for cloned or copied upstream implementations used for
-  research, comparison, or selective internalization.
-- `.ref/` is ignored by git and must never be committed.
-- Use `just ref-clone <url> [name]` to clone or refresh a git repository into
-  `.ref/`.
-- Use `just ref-copy <source> <name>` to copy a local dependency or checkout
-  into `.ref/`.
+GitHub Actions is split by responsibility:
 
-## Versioning and commits
+- `ci.yml` runs `typos`, Rust and Markdown formatting checks, clippy, rustdoc,
+  nextest, doctests, a release build, and the MSRV check.
+- `audit.yml` runs `cargo deny check`.
+- `publish.yml` verifies the release tag against `Cargo.toml`, checks that
+  `CHANGELOG.md` matches `git-cliff`, runs `cargo publish --locked --dry-run`,
+  renders release notes, and publishes to crates.io and GitHub Releases on a
+  real tag push.
 
-- The repository baseline starts at `0.0.1` as the first intentional release.
-- The first repo setup commit is `init: abracadabra`.
-- Regular work follows conventional commits.
-- Commit messages and bodies should explain the intent of the change.
-- Keep history linear and modular with unit commits that are independently
-  useful, working, and reviewable.
-- Split feature work into small ordered commits so each step lands with the
-  code, tests, and docs required for that step.
-- Release prep commits use `chore(release): vX.Y.Z`, and tags use `vX.Y.Z`.
+The example CLI smoke test is part of the local `just ci` gate. It is not
+currently part of `ci.yml`.
 
-## Release checklist
+## Registry Catalog Maintenance
+
+- `src/agent_servers.rs` is generated. Do not edit it manually.
+- Run `just registry-sync` to refresh the committed ACP registry snapshot.
+- Keep generated output committed so normal builds remain offline and
+  deterministic.
+
+## Release Checklist
 
 1. Enter the repo shell with `devenv shell` or `direnv allow`.
 2. Run `just release [version]` from a clean worktree. Omit `version` to accept
    the next version suggested by `git-cliff`.
 3. Review the generated `CHANGELOG.md`, release commit, and annotated tag.
-   `CHANGELOG.md` is intentionally excluded from Oxfmt so git-cliff spacing
-   stays stable.
-4. Optional: run the release workflow manually with `dry_run=true` to validate
-   the tag, changelog, release notes, and `cargo publish --dry-run` before the
-   real publish.
+   `CHANGELOG.md` stays outside Oxfmt so `git-cliff` formatting remains stable.
+4. Optional: trigger `publish.yml` manually with `dry_run=true` to validate the
+   tag, changelog, release notes, and `cargo publish --dry-run`.
 5. Push with `git push origin HEAD --follow-tags`.
-6. Confirm the tag-triggered workflow publishes through crates.io trusted
-   publishing and updates the GitHub Release.
+6. Confirm the tag-triggered workflow published to crates.io and updated the
+   GitHub Release.
 
-## CI
+## Working Defaults
 
-- `ci.yml` runs spell check, format, clippy, docs, nextest, doctests, the CLI
-  example smoke test, build, and MSRV checks.
-- `audit.yml` runs `cargo deny check`.
-- `publish.yml` verifies the tag matches `Cargo.toml`, validates the checked-in
-  changelog against `git-cliff`, always runs `cargo publish --dry-run`,
-  uploads rendered release notes as an artifact, and publishes to crates.io
-  plus updates the GitHub Release on tag push using crates.io trusted
-  publishing.
+- Keep docs in sync with code and CI.
+- Prefer simple code, typed errors, and deterministic tests.
+- Keep ACP behavior spec-driven: update `SPEC.md` before expanding the public
+  surface.
+- Use `.ref/` for uncommitted reference code only.
