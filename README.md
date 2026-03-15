@@ -1,7 +1,14 @@
 # acpx
 
-> **Disclaimer:** This is an independent project and is **not** an official
-> Agent Client Protocol (ACP) project.
+[![CI](https://github.com/imumesh18/acpx/actions/workflows/ci.yml/badge.svg)](https://github.com/imumesh18/acpx/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/acpx.svg)](https://crates.io/crates/acpx)
+[![Docs.rs](https://img.shields.io/docsrs/acpx)](https://docs.rs/acpx)
+[![MSRV](https://img.shields.io/badge/rustc-1.85%2B-b7410e)](https://github.com/imumesh18/acpx/blob/main/Cargo.toml)
+[![License](https://img.shields.io/crates/l/acpx)](https://crates.io/crates/acpx)
+
+> [!IMPORTANT]
+> This is an independent project and is **not** an official Agent Client
+> Protocol (ACP) project.
 
 `acpx` is a thin Rust client for launching Agent Client Protocol (ACP) agent
 servers as local subprocesses and talking to them through the official ACP Rust
