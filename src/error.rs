@@ -32,6 +32,10 @@ pub enum Error {
     #[error(transparent)]
     Protocol(#[from] agent_client_protocol::Error),
 
+    /// The connection has already been closed.
+    #[error("connection is closed")]
+    Closed,
+
     /// Waiting for the agent process to exit failed.
     #[error("failed to wait for agent process exit")]
     WaitForProcess {

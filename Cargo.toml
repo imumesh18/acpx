@@ -16,11 +16,12 @@ crate-type = ["lib"]
 
 [dependencies]
 agent-client-protocol = "0.10.2"
+async-process = "2.5.0"
+async-trait = "0.1"
 futures = "0.3.31"
 thiserror = "2.0"
 
 [dev-dependencies]
-async-trait = "0.1"
 tokio = { version = "1.48", features = ["full"] }
 tokio-util = { version = "0.7", features = ["compat"] }
 
