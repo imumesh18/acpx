@@ -35,10 +35,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: git checkout "$INPUT_TAG"
 
-      - run: rustup update stable && rustup default stable
-
-      - name: Install git-cliff
-        run: cargo install git-cliff --locked --version 2.12.0
+      - uses: ./.github/actions/setup-rust
+        with:
+          tools: git-cliff@2.12.0
+          cache-key: publish
 
       - name: Resolve release tag
         run: |

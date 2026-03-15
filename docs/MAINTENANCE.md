@@ -4,7 +4,7 @@
 
 - `just ci`
 - `typos`
-- `cargo fmt --all -- --check`
+- `just fmt-check`
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked`
 - `cargo nextest run --all --all-features --locked --no-tests pass`
@@ -39,6 +39,11 @@
 - The repository baseline starts at `0.0.1` as the first intentional release.
 - The first repo setup commit is `init: abracadabra`.
 - Regular work follows conventional commits.
+- Commit messages and bodies should explain the intent of the change.
+- Keep history linear and modular with unit commits that are independently
+  useful, working, and reviewable.
+- Split feature work into small ordered commits so each step lands with the
+  code, tests, and docs required for that step.
 - Release prep commits use `chore(release): vX.Y.Z`, and tags use `vX.Y.Z`.
 
 ## Release checklist
@@ -47,6 +52,8 @@
 2. Run `just release [version]` from a clean worktree. Omit `version` to accept
    the next version suggested by `git-cliff`.
 3. Review the generated `CHANGELOG.md`, release commit, and annotated tag.
+   `CHANGELOG.md` is intentionally excluded from Oxfmt so git-cliff spacing
+   stays stable.
 4. Optional: run the release workflow manually with `dry_run=true` to validate
    the tag, changelog, release notes, and `cargo publish --dry-run` before the
    real publish.

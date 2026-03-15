@@ -13,10 +13,12 @@ Read this file first.
 
 ## Commands
 
+- `just ci`
 - `typos`
+- `just fmt`
+- `just fmt-check`
 - `just ref-clone <url> [name]`
 - `just ref-copy <source> <name>`
-- `cargo fmt --all -- --check`
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `cargo nextest run --all --all-features --locked --no-tests pass`
 - `cargo test --doc --all-features --locked`
@@ -33,6 +35,11 @@ Read this file first.
 - Prefer typed errors and a small dependency graph.
 - Use `.ref/` for ignored reference or copied upstream code; never commit it.
 - Follow conventional commits. The first repo setup commit is `init: abracadabra`.
+- Commit messages and bodies should explain intent, not just the file changes.
+- Keep history linear and modular: prefer unit commits that each stand on their
+  own, pass checks, and deliver a coherent slice of value.
+- Split feature work into ordered commits where each step is independently
+  working and includes the code, tests, and docs needed for that step.
 - Keep the repo baseline aligned with `0.0.1` as the first intentional release.
 - Release prep commits use `chore(release): vX.Y.Z` and tags use `vX.Y.Z`.
 - Treat the ACP protocol spec, ACP Rust SDK, ACP registry, and ACP docs as the

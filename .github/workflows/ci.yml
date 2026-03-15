@@ -6,19 +6,31 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - run: rustup update stable && rustup default stable
-      - run: rustup component add rustfmt clippy
-      - run: cargo install typos-cli --locked
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          components: rustfmt clippy
+          tools: typos-cli cargo-nextest
+          cache-key: test
+
       - run: typos
       - run: cargo fmt --all -- --check
+      - run: npx --yes oxfmt@0.40.0 --no-error-on-unmatched-pattern --check "**/*.md" "**/*.toml" "**/*.yml" "**/*.yaml" "!CHANGELOG.md"
       - run: cargo clippy --all-targets --all-features -- -D warnings
       - run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked
-      - run: cargo install cargo-nextest --locked
       - run: cargo nextest run --all --all-features --locked --no-tests pass
       - run: cargo test --doc --all-features --locked
 
@@ -26,16 +38,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - run: rustup update stable && rustup default stable
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: build
+
       - run: cargo build --all --all-features --locked --release
 
   msrv:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - run: rustup update stable && rustup default stable
-      - run: |
-          MSRV=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].rust_version')
-          rustup install "$MSRV"
-          rustup default "$MSRV"
+
+      - name: Determine MSRV
+        id: msrv
+        run: |
+          rustup update stable && rustup default stable
+          echo "value=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].rust_version')" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          toolchain: ${{ steps.msrv.outputs.value }}
+          cache-key: msrv-${{ steps.msrv.outputs.value }}
+
       - run: cargo check --all-features --locked

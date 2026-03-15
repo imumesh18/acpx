@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - run: rustup update stable && rustup default stable
-      - run: cargo install cargo-deny --locked
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          tools: cargo-deny
+          cache-key: audit
+          cache-target: "false"
+
       - run: cargo deny check

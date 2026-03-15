@@ -1,13 +1,18 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+oxfmt := "npx --yes oxfmt@0.40.0 --no-error-on-unmatched-pattern"
+oxfmt_paths := "\"**/*.md\" \"**/*.toml\" \"**/*.yml\" \"**/*.yaml\" \"!CHANGELOG.md\""
+
 default:
   @just --list
 
 fmt:
   cargo fmt --all
+  {{oxfmt}} {{oxfmt_paths}}
 
 fmt-check:
   cargo fmt --all -- --check
+  {{oxfmt}} --check {{oxfmt_paths}}
 
 clippy:
   cargo clippy --all-targets --all-features -- -D warnings

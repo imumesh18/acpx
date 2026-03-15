@@ -57,11 +57,13 @@ acpx = "0.0.1"
 ## Development
 
 Use `devenv shell` for a reproducible local shell, or `direnv allow` if you use
-`direnv`. The shell provides `just`, `git-cliff`, `cargo-nextest`,
-`cargo-deny`, `gh`, and `jq`.
+`direnv`. The shell provides `node`, `npx`, `just`, `git-cliff`, `cargo-nextest`,
+`cargo-deny`, `jq`, and the Rust toolchain.
 
 Common commands:
 
+- `just fmt` formats Rust, Markdown, YAML, and TOML files.
+- `just fmt-check` checks Rust, Markdown, YAML, and TOML formatting.
 - `just ci` runs the full local quality gate.
 - `just typos` runs source and docs spell checking.
 - `just changelog` regenerates `CHANGELOG.md` from the current git history.
@@ -103,4 +105,9 @@ Commit policy:
 
 - The initial repo setup commit is `init: abracadabra`.
 - Follow conventional commits for regular work.
+- Write commit messages and bodies that explain intent.
+- Prefer linear, modular unit commits that each work on their own and add a
+  coherent slice of value.
+- Split feature work into small ordered commits so each step includes the code,
+  tests, and docs needed for that step.
 - Release preparation commits use `chore(release): vX.Y.Z`.
