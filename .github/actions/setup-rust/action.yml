@@ -81,4 +81,4 @@ runs:
         fi
 
         read -r -a tools <<< "${{ inputs.tools }}"
-        cargo binstall -y --no-confirm "${tools[@]}"
+        cargo binstall --no-confirm "${tools[@]}"
