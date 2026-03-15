@@ -48,7 +48,7 @@ Binary-only registry entries remain visible in `agent_servers`, but
 
 ```toml
 [dependencies]
-acpx = "0.0.1"
+acpx = "0.1.0"
 ```
 
 ## Quick Start

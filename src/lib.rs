@@ -38,7 +38,7 @@
 //!     let _initialize = connection
 //!         .initialize(
 //!             acp::InitializeRequest::new(acp::ProtocolVersion::V1).client_info(
-//!                 acp::Implementation::new("acpx-docs", "0.0.1").title("acpx Docs"),
+//!                 acp::Implementation::new("acpx-docs", "0.1.0").title("acpx Docs"),
 //!             ),
 //!         )
 //!         .await?;

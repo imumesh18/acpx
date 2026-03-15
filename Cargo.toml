@@ -1,6 +1,6 @@
 [package]
 name = "acpx"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Simple Rust library and tooling for building on ACP."

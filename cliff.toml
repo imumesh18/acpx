@@ -17,6 +17,30 @@ https://github.com/imumesh18/acpx
 {%- macro commit_line(commit) -%}
 - {% if commit.raw_message == "init: abracadabra" -%}
 Repository scaffolding, release automation, and planning baseline for acpx.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "feat: add runtime and fixture foundations" -%}
+Runtime and fixture-agent foundations for deterministic ACP subprocess tests and examples.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "feat: add ACP connection wrapper" -%}
+A subprocess-backed `Connection` wrapper for ACP over stdio, including request forwarding and captured `session/update` notifications.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "feat: add handwritten agent server contract" -%}
+A handwritten `AgentServer` launch contract with `CommandAgentServer` and `CommandSpec` for fixed local launch commands.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "feat: add generated agent server catalog" -%}
+A generated `agent_servers` catalog for the committed ACP registry snapshot.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "feat: add curated registry mapping layer" -%}
+Curated registry lookup helpers for resolving official ACP server ids and host-platform binary metadata.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "feat: add cli example and tighten registry naming" -%}
+A CLI example that exercises one-shot agent sessions against manual and registry-backed server definitions, plus tighter registry naming.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "fix(ci): remove duplicate cargo-binstall confirm flag" -%}
+GitHub Actions tool installation now works with current `cargo-binstall` releases by avoiding duplicate confirmation flags.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "chore(tooling): unify repo checks and formatting" -%}
+Quality gates, formatting, and release automation were unified around the current Rust and docs toolchain.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "docs: align ACP spec, plan, and guardrails" -%}
+The ACP spec, roadmap, and repository guardrails were aligned with the shipped library surface.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "refactor(agent-servers): merge catalog module" -%}
+The generated agent-server catalog was consolidated behind a cleaner public module boundary.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "docs: refresh product and maintenance docs" -%}
+Product docs and maintainer docs were refreshed to match the shipped `0.1.0` API surface.
+{%- elif commit.raw_message | split(pat="\n") | first | trim == "docs(readme): add project badges" -%}
+The README now surfaces CI, crates.io, docs.rs, MSRV, and license badges for release visibility.
 {%- else -%}
 {%- if commit.scope %}**{{ commit.scope }}:** {% endif -%}
 {%- if commit.breaking %}**BREAKING:** {% endif -%}
@@ -30,14 +54,14 @@ Repository scaffolding, release automation, and planning baseline for acpx.
 ## [Unreleased]
 {% endif %}
 
-{% if version and not previous.version and commits | length != 0 -%}
-
+{%- if version and not previous.version and commits | length != 0 %}
 Initial release of acpx, a simple Rust library and tooling layer for building on ACP.
-{% endif %}
+{%- endif %}
 
-{% for group, commits in commits | group_by(attribute="group") %}
+{%- for group, commits in commits | group_by(attribute="group") %}
+
 ### {{ group | striptags | trim }}
-{% for commit in commits %}
+{%- for commit in commits %}
 {{ self::commit_line(commit=commit) }}
 {% endfor %}
 {% endfor -%}
