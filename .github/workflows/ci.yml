@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: rustup update stable && rustup default stable
+      - run: rustup component add rustfmt clippy
+      - run: cargo install typos-cli --locked
+      - run: typos
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked
+      - run: cargo install cargo-nextest --locked
+      - run: cargo nextest run --all --all-features --locked --no-tests pass
+      - run: cargo test --doc --all-features --locked
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: rustup update stable && rustup default stable
+      - run: cargo build --all --all-features --locked --release
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: rustup update stable && rustup default stable
+      - run: |
+          MSRV=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].rust_version')
+          rustup install "$MSRV"
+          rustup default "$MSRV"
+      - run: cargo check --all-features --locked

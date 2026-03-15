@@ -1,0 +1,23 @@
+[package]
+name = "acpx"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+description = "Simple Rust library and tooling for building on ACP."
+license = "MIT"
+repository = "https://github.com/imumesh18/acpx"
+documentation = "https://docs.rs/acpx"
+readme = "README.md"
+keywords = ["acp", "agent-protocol", "client", "sdk"]
+categories = ["api-bindings", "development-tools"]
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = "warn"
