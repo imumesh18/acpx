@@ -1,9 +1,12 @@
-//! `acpx` is a simple Rust library and tooling layer for Agent Client
-//! Protocol.
+//! `acpx` is a thin Rust wrapper around the official Agent Client Protocol
+//! (ACP) Rust SDK.
 //!
-//! The repository is currently in specification and planning mode for its
-//! first ACP-focused release.
-//!
-//! No ACP-facing public API is committed yet. Before `1.0.0`, draft API shapes
-//! should be treated as provisional and may change if implementation reveals a
-//! better contract.
+//! The crate is pre-`1.0.0` and the ACP-facing API is still settling. The
+//! current modules establish the runtime and error contracts used by the
+//! connection, registry, and agent server work that follows.
+
+pub mod error;
+pub mod runtime;
+
+pub use crate::error::{Error, Result, UnsupportedLaunch};
+pub use crate::runtime::{LocalTask, RuntimeContext, Task};
