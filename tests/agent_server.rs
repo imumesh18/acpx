@@ -2,7 +2,9 @@ mod support;
 
 use std::path::PathBuf;
 
-use acpx::{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec, Error, RuntimeContext};
+use acpx::{
+    AgentServer, AgentServerMetadata, CommandAgentServer, CommandSpec, Error, RuntimeContext,
+};
 use agent_client_protocol::{self as acp};
 
 #[test]
@@ -64,7 +66,7 @@ fn command_agent_server_connects_and_closes_fixture_agent() {
 
 fn fixture_server() -> CommandAgentServer {
     CommandAgentServer::new(
-        AgentMetadata::new("fixture-agent", "Fixture Agent", "0.0.1")
+        AgentServerMetadata::new("fixture-agent", "Fixture Agent", "0.0.1")
             .description("Manual command-backed ACP fixture")
             .icon("fixture.svg"),
         CommandSpec::new(current_test_binary().to_string_lossy())

@@ -58,7 +58,7 @@ The first ACP-focused release of `acpx` should provide:
 - a thin `acpx` module on top of `agent_client_protocol::ClientSideConnection`,
 - an `agent_server` module with a small trait-based contract for launchable ACP
   agent definitions,
-- a `registry` module backed by a generated snapshot of the official ACP
+- an `agent_servers` module backed by a generated snapshot of the official ACP
   registry and preserving the official registry ids,
 - an example CLI in `examples/cli.rs` for local integration testing and manual
   protocol verification.
@@ -183,9 +183,9 @@ Runtime-agnostic requirement:
   macro-driven runtime-specific traits,
 - if process management requires an external crate, it must be runtime-neutral.
 
-### `registry`
+### `agent_servers`
 
-`registry` provides a compile-time Rust view of the official ACP registry.
+`agent_servers` provides a compile-time Rust view of the official ACP registry.
 
 Responsibilities:
 
@@ -218,14 +218,14 @@ Connection rules:
   so binary-only registry entries remain discoverable but may return a typed
   unsupported-launch error from `connect`.
 
-This keeps the registry module simple and honest. It provides real value for
+This keeps the `agent_servers` module simple and honest. It provides real value for
 lookup, listing, inspection, and launch of package-backed agents without
 turning the crate into an installer or package manager.
 
 Consumer-facing naming policy is explicitly out of scope for the library. If a
 CLI or application wants friendlier ids such as `droid` instead of
 `factory-droid`, that mapping belongs in the consumer layer, not in the core
-`acpx::registry` API.
+`acpx::agent_servers` API.
 
 ### `examples/cli.rs`
 
@@ -238,7 +238,7 @@ Purpose:
 - run a prompt loop against a selected agent,
 - inspect initialization results, auth methods, capabilities, and session
   updates in a terminal,
-- exercise shutdown behavior and registry lookups during development.
+- exercise shutdown behavior and agent-server lookups during development.
 
 Requirements:
 
@@ -256,7 +256,7 @@ flows before stabilizing the public API.
 
 The intended happy-path lifecycle is:
 
-1. Choose an `AgentServer` directly or through `registry`.
+1. Choose an `AgentServer` directly or through `agent_servers`.
 2. Launch the agent as a local subprocess that speaks ACP over stdio.
 3. Create the upstream `ClientSideConnection`.
 4. Start the ACP I/O driver.
@@ -278,7 +278,7 @@ Important ACP rules that `acpx` must preserve:
 
 The library should use typed errors that make these categories distinct:
 
-- registry lookup or platform resolution failure,
+- agent-server catalog lookup or platform resolution failure,
 - unsupported launch strategy for a known registry entry,
 - missing local launcher prerequisite such as `npx` or `uvx`,
 - subprocess spawn failure,
@@ -313,10 +313,8 @@ The first ACP-focused vertical slice is implemented:
   shutdown.
 - `agent_server` exposes a handwritten runtime-neutral launch contract plus a
   manual command-backed server.
-- `agent_servers` is generated from the official ACP registry and committed to
-  the repository.
-- `registry` provides raw lookup and typed host-platform helpers on top of the
-  generated registry snapshot.
+- `agent_servers` is generated from the official ACP registry, committed to
+  the repository, and provides raw lookup plus typed host-platform helpers.
 - `examples/cli.rs` provides a single-shot CLI harness for manual integration
   testing.
 

@@ -6,22 +6,17 @@
 //!
 //! - `Connection` for subprocess-backed ACP sessions over stdio,
 //! - `AgentServer` and `CommandAgentServer` for launchable agent definitions,
-//! - a generated ACP registry snapshot plus raw-id `registry` helpers,
+//! - an `agent_servers` catalog backed by a generated ACP registry snapshot,
 //! - runtime-neutral local task hooks for the upstream SDK's `!Send` model.
 
 pub mod acpx;
 pub mod agent_server;
 pub mod agent_servers;
 pub mod error;
-pub mod registry;
 pub mod runtime;
 
 pub use crate::acpx::Connection;
-pub use crate::agent_server::{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec};
-pub use crate::agent_servers::{
-    RegistryAgentServer, RegistryBinaryTarget, RegistryDistribution, RegistryPackageDistribution,
-    RegistryPackageManager,
-};
+pub use crate::agent_server::{AgentServer, AgentServerMetadata, CommandAgentServer, CommandSpec};
+pub use crate::agent_servers::{Error as AgentServerError, HostPlatform};
 pub use crate::error::{Error, Result, UnsupportedLaunch};
-pub use crate::registry::{HostPlatform, RegistryError};
 pub use crate::runtime::{LocalTask, RuntimeContext, Task};

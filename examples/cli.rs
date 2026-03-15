@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use acpx::{AgentServer, Error as AcpxError, RegistryAgentServer, RuntimeContext, registry};
+use acpx::{AgentServer, Error as AcpxError, RuntimeContext, agent_servers};
 use agent_client_protocol as acp;
 use futures::StreamExt as _;
 use thiserror::Error;
@@ -42,7 +42,7 @@ enum CliError {
     Usage(String),
 
     #[error(transparent)]
-    Registry(#[from] registry::RegistryError),
+    AgentServers(#[from] agent_servers::Error),
 
     #[error(transparent)]
     Acpx(#[from] AcpxError),
@@ -134,11 +134,11 @@ fn next_option_value(
         .ok_or_else(|| CliError::Usage(format!("missing value for `{option}`")))
 }
 
-fn resolve_agent_server(agent_ref: &str) -> Result<RegistryAgentServer, CliError> {
-    registry::agent_server(agent_ref)
-        .or_else(|| alias_agent_server_id(agent_ref).and_then(registry::agent_server))
+fn resolve_agent_server(agent_ref: &str) -> Result<agent_servers::Server, CliError> {
+    agent_servers::get(agent_ref)
+        .or_else(|| alias_agent_server_id(agent_ref).and_then(agent_servers::get))
         .ok_or_else(|| {
-            registry::RegistryError::UnknownAgentServer {
+            agent_servers::Error::UnknownServer {
                 id: agent_ref.to_owned(),
             }
             .into()
@@ -320,7 +320,7 @@ mod tests {
     use crate::acpx_cli_fixture_agent;
 
     use super::{CliRequest, parse_args, resolve_agent_server, run_cli_with_server};
-    use acpx::{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec};
+    use acpx::{AgentServer, AgentServerMetadata, CommandAgentServer, CommandSpec};
 
     #[test]
     fn fixture_agent_child_entrypoint() {
@@ -357,7 +357,7 @@ mod tests {
     }
 
     #[test]
-    fn registry_resolution_supports_cli_aliases() {
+    fn agent_server_resolution_supports_cli_aliases() {
         let codex = resolve_agent_server("codex").expect("codex alias should resolve");
         assert_eq!(codex.id(), "codex-acp");
 
@@ -381,7 +381,7 @@ mod tests {
 
         runtime.block_on(local_set.run_until(async move {
             let server = CommandAgentServer::new(
-                AgentMetadata::new("fixture-agent", "Fixture Agent", "0.0.1"),
+                AgentServerMetadata::new("fixture-agent", "Fixture Agent", "0.0.1"),
                 fixture_agent_command(),
             );
             let request = CliRequest {

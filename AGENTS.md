@@ -7,8 +7,7 @@ Read this file first.
 - `src/lib.rs`: crate entrypoint and crate-level documentation.
 - `src/acpx.rs`: subprocess-backed ACP connection wrapper.
 - `src/agent_server.rs`: handwritten launch contract and manual command server.
-- `src/agent_servers.rs`: generated ACP registry snapshot.
-- `src/registry.rs`: raw registry lookup and platform mapping layer.
+- `src/agent_servers.rs`: generated agent-server catalog, metadata, and platform helpers.
 - `examples/cli.rs`: single-shot integration harness for real agents.
 - `scripts/`: repo-local automation for quality gates and release preparation.
 - `.ref/`: ignored reference checkouts and copied upstream implementations.

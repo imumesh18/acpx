@@ -4,9 +4,9 @@ use async_process::Command;
 
 use crate::{Connection, Error, Result, RuntimeContext, Task};
 
-/// Descriptive metadata for a launchable ACP agent.
+/// Descriptive metadata for a launchable ACP agent server.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AgentMetadata {
+pub struct AgentServerMetadata {
     id: String,
     name: String,
     description: String,
@@ -14,7 +14,7 @@ pub struct AgentMetadata {
     icon: Option<String>,
 }
 
-impl AgentMetadata {
+impl AgentServerMetadata {
     /// Creates the minimum required metadata for an agent definition.
     #[must_use]
     pub fn new(id: impl Into<String>, name: impl Into<String>, version: impl Into<String>) -> Self {
@@ -162,10 +162,10 @@ impl CommandSpec {
     }
 }
 
-/// A handwritten contract for launchable ACP agent definitions.
+/// A handwritten contract for launchable ACP agent-server definitions.
 pub trait AgentServer {
     /// Returns the durable metadata for this server.
-    fn metadata(&self) -> &AgentMetadata;
+    fn metadata(&self) -> &AgentServerMetadata;
 
     /// Launches the server and returns a connected ACP client handle.
     ///
@@ -218,14 +218,14 @@ pub trait AgentServer {
 /// A handwritten ACP server definition backed by a fixed subprocess command.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CommandAgentServer {
-    metadata: AgentMetadata,
+    metadata: AgentServerMetadata,
     command: CommandSpec,
 }
 
 impl CommandAgentServer {
     /// Creates a command-backed agent server definition.
     #[must_use]
-    pub fn new(metadata: AgentMetadata, command: CommandSpec) -> Self {
+    pub fn new(metadata: AgentServerMetadata, command: CommandSpec) -> Self {
         Self { metadata, command }
     }
 
@@ -237,7 +237,7 @@ impl CommandAgentServer {
 }
 
 impl AgentServer for CommandAgentServer {
-    fn metadata(&self) -> &AgentMetadata {
+    fn metadata(&self) -> &AgentServerMetadata {
         &self.metadata
     }
 
@@ -292,12 +292,12 @@ mod tests {
 
     use futures::executor::block_on;
 
-    use super::{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec};
+    use super::{AgentServer, AgentServerMetadata, CommandAgentServer, CommandSpec};
     use crate::{Error, RuntimeContext};
 
     #[test]
     fn metadata_builder_sets_optional_fields() {
-        let metadata = AgentMetadata::new("fixture", "Fixture Agent", "0.0.1")
+        let metadata = AgentServerMetadata::new("fixture", "Fixture Agent", "0.0.1")
             .description("Manual test agent")
             .icon("fixture.svg");
 
@@ -328,7 +328,7 @@ mod tests {
             block_on(task);
         });
         let server = CommandAgentServer::new(
-            AgentMetadata::new("missing", "Missing Launcher", "0.0.1"),
+            AgentServerMetadata::new("missing", "Missing Launcher", "0.0.1"),
             CommandSpec::new("acpx-launcher-that-should-not-exist"),
         );
 

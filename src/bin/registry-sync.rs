@@ -109,6 +109,8 @@ fn render_registry_module(registry: &RegistryDocument) -> Result<String, Box<dyn
 
     let mut rendered = String::new();
     render_module_prelude(&mut rendered)?;
+    render_error_type(&mut rendered)?;
+    render_host_platform_type(&mut rendered)?;
     render_generated_agent_server_type(&mut rendered)?;
     render_generated_distribution_types(&mut rendered)?;
     render_registry_version(&mut rendered, &registry.version)?;
@@ -118,6 +120,7 @@ fn render_registry_module(registry: &RegistryDocument) -> Result<String, Box<dyn
     }
 
     render_registry_functions(&mut rendered, &agents)?;
+    render_public_helpers(&mut rendered)?;
 
     Ok(rendered)
 }
@@ -129,10 +132,14 @@ fn render_module_prelude(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     )?;
     writeln!(rendered, "// Do not edit manually.")?;
     writeln!(rendered)?;
+    writeln!(rendered, "use std::env;")?;
+    writeln!(rendered)?;
+    writeln!(rendered, "use thiserror::Error;")?;
+    writeln!(rendered)?;
     writeln!(rendered, "use crate::{{")?;
     writeln!(
         rendered,
-        "    agent_server::{{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec}},"
+        "    agent_server::{{AgentServerMetadata, AgentServer, CommandAgentServer, CommandSpec}},"
     )?;
     writeln!(
         rendered,
@@ -144,17 +151,192 @@ fn render_module_prelude(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn render_error_type(rendered: &mut String) -> Result<(), Box<dyn Error>> {
+    writeln!(
+        rendered,
+        "/// Typed failures from agent-server lookup and host-platform helpers."
+    )?;
+    writeln!(rendered, "#[derive(Clone, Debug, PartialEq, Eq, Error)]")?;
+    writeln!(rendered, "pub enum Error {{")?;
+    writeln!(
+        rendered,
+        "    /// The generated agent-server catalog does not contain the requested id."
+    )?;
+    writeln!(
+        rendered,
+        "    #[error(\"agent server `{{id}}` was not found\")]"
+    )?;
+    writeln!(rendered, "    UnknownServer {{")?;
+    writeln!(
+        rendered,
+        "        /// The unresolved official ACP registry id."
+    )?;
+    writeln!(rendered, "        id: String,")?;
+    writeln!(rendered, "    }},")?;
+    writeln!(rendered)?;
+    writeln!(
+        rendered,
+        "    /// The current or requested host target is outside the v0 platform map."
+    )?;
+    writeln!(
+        rendered,
+        "    #[error(\"unsupported host platform `{{os}}/{{arch}}`\")]"
+    )?;
+    writeln!(rendered, "    UnsupportedHostPlatform {{")?;
+    writeln!(rendered, "        /// The operating system identifier.")?;
+    writeln!(rendered, "        os: String,")?;
+    writeln!(rendered, "        /// The CPU architecture identifier.")?;
+    writeln!(rendered, "        arch: String,")?;
+    writeln!(rendered, "    }},")?;
+    writeln!(rendered)?;
+    writeln!(
+        rendered,
+        "    /// A binary-backed server does not provide a build for the requested host"
+    )?;
+    writeln!(rendered, "    /// target.")?;
+    writeln!(
+        rendered,
+        "    #[error(\"agent server `{{id}}` does not publish a binary for host platform `{{target}}`\")]"
+    )?;
+    writeln!(rendered, "    MissingBinaryTarget {{")?;
+    writeln!(rendered, "        /// The agent-server id.")?;
+    writeln!(rendered, "        id: String,")?;
+    writeln!(
+        rendered,
+        "        /// The official ACP registry target triple."
+    )?;
+    writeln!(rendered, "        target: String,")?;
+    writeln!(rendered, "    }},")?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
+fn render_host_platform_type(rendered: &mut String) -> Result<(), Box<dyn Error>> {
+    writeln!(
+        rendered,
+        "/// Host platforms currently mapped to ACP registry binary targets."
+    )?;
+    writeln!(rendered, "#[derive(Clone, Copy, Debug, PartialEq, Eq)]")?;
+    writeln!(rendered, "pub enum HostPlatform {{")?;
+    writeln!(rendered, "    DarwinAarch64,")?;
+    writeln!(rendered, "    DarwinX86_64,")?;
+    writeln!(rendered, "    LinuxAarch64,")?;
+    writeln!(rendered, "    LinuxX86_64,")?;
+    writeln!(rendered, "    WindowsAarch64,")?;
+    writeln!(rendered, "    WindowsX86_64,")?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+    writeln!(rendered, "impl HostPlatform {{")?;
+    writeln!(
+        rendered,
+        "    /// Resolves a Rust target OS and architecture into an ACP registry target."
+    )?;
+    writeln!(rendered, "    ///")?;
+    writeln!(rendered, "    /// # Errors")?;
+    writeln!(rendered, "    ///")?;
+    writeln!(
+        rendered,
+        "    /// Returns [`Error::UnsupportedHostPlatform`] when the pair does not map"
+    )?;
+    writeln!(
+        rendered,
+        "    /// to a supported ACP registry target in v0."
+    )?;
+    writeln!(
+        rendered,
+        "    pub fn from_target(os: &str, arch: &str) -> Result<Self, Error> {{"
+    )?;
+    writeln!(rendered, "        match (os, arch) {{")?;
+    writeln!(
+        rendered,
+        "            (\"macos\", \"aarch64\") => Ok(Self::DarwinAarch64),"
+    )?;
+    writeln!(
+        rendered,
+        "            (\"macos\", \"x86_64\") => Ok(Self::DarwinX86_64),"
+    )?;
+    writeln!(
+        rendered,
+        "            (\"linux\", \"aarch64\") => Ok(Self::LinuxAarch64),"
+    )?;
+    writeln!(
+        rendered,
+        "            (\"linux\", \"x86_64\") => Ok(Self::LinuxX86_64),"
+    )?;
+    writeln!(
+        rendered,
+        "            (\"windows\", \"aarch64\") => Ok(Self::WindowsAarch64),"
+    )?;
+    writeln!(
+        rendered,
+        "            (\"windows\", \"x86_64\") => Ok(Self::WindowsX86_64),"
+    )?;
+    writeln!(
+        rendered,
+        "            _ => Err(Error::UnsupportedHostPlatform {{"
+    )?;
+    writeln!(rendered, "                os: os.to_owned(),")?;
+    writeln!(rendered, "                arch: arch.to_owned(),")?;
+    writeln!(rendered, "            }}),")?;
+    writeln!(rendered, "        }}")?;
+    writeln!(rendered, "    }}")?;
+    writeln!(rendered)?;
+    writeln!(
+        rendered,
+        "    /// Returns the official ACP registry target identifier."
+    )?;
+    writeln!(rendered, "    #[must_use]")?;
+    writeln!(
+        rendered,
+        "    pub fn registry_target(self) -> &'static str {{"
+    )?;
+    writeln!(rendered, "        match self {{")?;
+    writeln!(
+        rendered,
+        "            Self::DarwinAarch64 => \"darwin-aarch64\","
+    )?;
+    writeln!(
+        rendered,
+        "            Self::DarwinX86_64 => \"darwin-x86_64\","
+    )?;
+    writeln!(
+        rendered,
+        "            Self::LinuxAarch64 => \"linux-aarch64\","
+    )?;
+    writeln!(
+        rendered,
+        "            Self::LinuxX86_64 => \"linux-x86_64\","
+    )?;
+    writeln!(
+        rendered,
+        "            Self::WindowsAarch64 => \"windows-aarch64\","
+    )?;
+    writeln!(
+        rendered,
+        "            Self::WindowsX86_64 => \"windows-x86_64\","
+    )?;
+    writeln!(rendered, "        }}")?;
+    writeln!(rendered, "    }}")?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+
+    Ok(())
+}
+
 fn render_generated_agent_server_type(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Debug, PartialEq, Eq)]")?;
-    writeln!(rendered, "pub struct GeneratedAgentServer {{")?;
-    writeln!(rendered, "    metadata: AgentMetadata,")?;
+    writeln!(rendered, "pub struct Server {{")?;
+    writeln!(rendered, "    metadata: AgentServerMetadata,")?;
     writeln!(rendered, "    repository: Option<String>,")?;
     writeln!(rendered, "    authors: Vec<String>,")?;
     writeln!(rendered, "    license: String,")?;
-    writeln!(rendered, "    distribution: GeneratedDistribution,")?;
+    writeln!(rendered, "    distribution: Distribution,")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "impl GeneratedAgentServer {{")?;
+    writeln!(rendered, "impl Server {{")?;
     writeln!(rendered, "    #[must_use]")?;
     writeln!(rendered, "    pub fn repository(&self) -> Option<&str> {{")?;
     writeln!(rendered, "        self.repository.as_deref()")?;
@@ -173,14 +355,17 @@ fn render_generated_agent_server_type(rendered: &mut String) -> Result<(), Box<d
     writeln!(rendered, "    #[must_use]")?;
     writeln!(
         rendered,
-        "    pub fn distribution(&self) -> &GeneratedDistribution {{"
+        "    pub fn distribution(&self) -> &Distribution {{"
     )?;
     writeln!(rendered, "        &self.distribution")?;
     writeln!(rendered, "    }}")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "impl AgentServer for GeneratedAgentServer {{")?;
-    writeln!(rendered, "    fn metadata(&self) -> &AgentMetadata {{")?;
+    writeln!(rendered, "impl AgentServer for Server {{")?;
+    writeln!(
+        rendered,
+        "    fn metadata(&self) -> &AgentServerMetadata {{"
+    )?;
     writeln!(rendered, "        &self.metadata")?;
     writeln!(rendered, "    }}")?;
     writeln!(rendered)?;
@@ -221,17 +406,17 @@ fn render_generated_distribution_types(rendered: &mut String) -> Result<(), Box<
 
 fn render_generated_distribution_struct(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Debug, PartialEq, Eq)]")?;
-    writeln!(rendered, "pub struct GeneratedDistribution {{")?;
-    writeln!(rendered, "    binary: Vec<GeneratedBinaryTarget>,")?;
-    writeln!(rendered, "    npx: Option<GeneratedPackageDistribution>,")?;
-    writeln!(rendered, "    uvx: Option<GeneratedPackageDistribution>,")?;
+    writeln!(rendered, "pub struct Distribution {{")?;
+    writeln!(rendered, "    binary: Vec<BinaryTarget>,")?;
+    writeln!(rendered, "    npx: Option<PackageDistribution>,")?;
+    writeln!(rendered, "    uvx: Option<PackageDistribution>,")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "impl GeneratedDistribution {{")?;
+    writeln!(rendered, "impl Distribution {{")?;
     writeln!(rendered, "    #[must_use]")?;
     writeln!(
         rendered,
-        "    pub fn binary_targets(&self) -> &[GeneratedBinaryTarget] {{"
+        "    pub fn binary_targets(&self) -> &[BinaryTarget] {{"
     )?;
     writeln!(rendered, "        &self.binary")?;
     writeln!(rendered, "    }}")?;
@@ -239,7 +424,7 @@ fn render_generated_distribution_struct(rendered: &mut String) -> Result<(), Box
     writeln!(rendered, "    #[must_use]")?;
     writeln!(
         rendered,
-        "    pub fn npx(&self) -> Option<&GeneratedPackageDistribution> {{"
+        "    pub fn npx(&self) -> Option<&PackageDistribution> {{"
     )?;
     writeln!(rendered, "        self.npx.as_ref()")?;
     writeln!(rendered, "    }}")?;
@@ -247,14 +432,14 @@ fn render_generated_distribution_struct(rendered: &mut String) -> Result<(), Box
     writeln!(rendered, "    #[must_use]")?;
     writeln!(
         rendered,
-        "    pub fn uvx(&self) -> Option<&GeneratedPackageDistribution> {{"
+        "    pub fn uvx(&self) -> Option<&PackageDistribution> {{"
     )?;
     writeln!(rendered, "        self.uvx.as_ref()")?;
     writeln!(rendered, "    }}")?;
     writeln!(rendered)?;
     writeln!(
         rendered,
-        "    fn preferred_package(&self) -> Option<&GeneratedPackageDistribution> {{"
+        "    fn preferred_package(&self) -> Option<&PackageDistribution> {{"
     )?;
     writeln!(rendered, "        self.npx.as_ref().or(self.uvx.as_ref())")?;
     writeln!(rendered, "    }}")?;
@@ -266,13 +451,13 @@ fn render_generated_distribution_struct(rendered: &mut String) -> Result<(), Box
 
 fn render_generated_binary_target_type(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Debug, PartialEq, Eq)]")?;
-    writeln!(rendered, "pub struct GeneratedBinaryTarget {{")?;
+    writeln!(rendered, "pub struct BinaryTarget {{")?;
     writeln!(rendered, "    target: String,")?;
     writeln!(rendered, "    archive: String,")?;
     writeln!(rendered, "    cmd: String,")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "impl GeneratedBinaryTarget {{")?;
+    writeln!(rendered, "impl BinaryTarget {{")?;
     writeln!(rendered, "    #[must_use]")?;
     writeln!(rendered, "    pub fn target(&self) -> &str {{")?;
     writeln!(rendered, "        &self.target")?;
@@ -298,19 +483,18 @@ fn render_generated_package_distribution_types(
 ) -> Result<(), Box<dyn Error>> {
     render_generated_package_manager_type(rendered)?;
     render_generated_package_distribution_struct(rendered)?;
-    render_registry_type_aliases(rendered)?;
 
     Ok(())
 }
 
 fn render_generated_package_manager_type(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Copy, Debug, PartialEq, Eq)]")?;
-    writeln!(rendered, "pub enum GeneratedPackageManager {{")?;
+    writeln!(rendered, "pub enum PackageManager {{")?;
     writeln!(rendered, "    Npx,")?;
     writeln!(rendered, "    Uvx,")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "impl GeneratedPackageManager {{")?;
+    writeln!(rendered, "impl PackageManager {{")?;
     writeln!(rendered, "    #[must_use]")?;
     writeln!(rendered, "    pub fn launcher(self) -> &'static str {{")?;
     writeln!(rendered, "        match self {{")?;
@@ -339,19 +523,16 @@ fn render_generated_package_distribution_struct(
     rendered: &mut String,
 ) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[derive(Clone, Debug, PartialEq, Eq)]")?;
-    writeln!(rendered, "pub struct GeneratedPackageDistribution {{")?;
-    writeln!(rendered, "    manager: GeneratedPackageManager,")?;
+    writeln!(rendered, "pub struct PackageDistribution {{")?;
+    writeln!(rendered, "    manager: PackageManager,")?;
     writeln!(rendered, "    package: String,")?;
     writeln!(rendered, "    args: Vec<String>,")?;
     writeln!(rendered, "    env: Vec<(String, String)>,")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "impl GeneratedPackageDistribution {{")?;
+    writeln!(rendered, "impl PackageDistribution {{")?;
     writeln!(rendered, "    #[must_use]")?;
-    writeln!(
-        rendered,
-        "    pub fn manager(&self) -> GeneratedPackageManager {{"
-    )?;
+    writeln!(rendered, "    pub fn manager(&self) -> PackageManager {{")?;
     writeln!(rendered, "        self.manager")?;
     writeln!(rendered, "    }}")?;
     writeln!(rendered)?;
@@ -400,36 +581,10 @@ fn render_generated_package_distribution_struct(
     Ok(())
 }
 
-fn render_registry_type_aliases(rendered: &mut String) -> Result<(), Box<dyn Error>> {
-    writeln!(
-        rendered,
-        "pub type RegistryAgentServer = GeneratedAgentServer;"
-    )?;
-    writeln!(
-        rendered,
-        "pub type RegistryDistribution = GeneratedDistribution;"
-    )?;
-    writeln!(
-        rendered,
-        "pub type RegistryBinaryTarget = GeneratedBinaryTarget;"
-    )?;
-    writeln!(
-        rendered,
-        "pub type RegistryPackageManager = GeneratedPackageManager;"
-    )?;
-    writeln!(
-        rendered,
-        "pub type RegistryPackageDistribution = GeneratedPackageDistribution;"
-    )?;
-    writeln!(rendered)?;
-
-    Ok(())
-}
-
 fn render_registry_version(rendered: &mut String, version: &str) -> Result<(), Box<dyn Error>> {
     writeln!(
         rendered,
-        "pub const REGISTRY_VERSION: &str = {};",
+        "pub const VERSION: &str = {};",
         rust_string_literal(version)
     )?;
     writeln!(rendered)?;
@@ -442,10 +597,7 @@ fn render_registry_functions(
     agents: &[RegistryAgent],
 ) -> Result<(), Box<dyn Error>> {
     writeln!(rendered, "#[must_use]")?;
-    writeln!(
-        rendered,
-        "pub fn generated_agent_servers() -> Vec<GeneratedAgentServer> {{"
-    )?;
+    writeln!(rendered, "pub fn all() -> Vec<Server> {{")?;
     writeln!(rendered, "    vec![")?;
     for agent in agents {
         writeln!(rendered, "        {}(),", function_name(&agent.id))?;
@@ -454,10 +606,7 @@ fn render_registry_functions(
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
     writeln!(rendered, "#[must_use]")?;
-    writeln!(
-        rendered,
-        "pub fn generated_agent_server(id: &str) -> Option<GeneratedAgentServer> {{"
-    )?;
+    writeln!(rendered, "pub fn get(id: &str) -> Option<Server> {{")?;
     writeln!(rendered, "    match id {{")?;
     for agent in agents {
         writeln!(
@@ -470,21 +619,144 @@ fn render_registry_functions(
     writeln!(rendered, "        _ => None,")?;
     writeln!(rendered, "    }}")?;
     writeln!(rendered, "}}")?;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
+fn render_public_helpers(rendered: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(rendered)?;
-    writeln!(rendered, "#[must_use]")?;
     writeln!(
         rendered,
-        "pub fn registry_agent_servers() -> Vec<RegistryAgentServer> {{"
+        "/// Returns the embedded agent-server catalog version."
     )?;
-    writeln!(rendered, "    generated_agent_servers()")?;
+    writeln!(rendered, "#[must_use]")?;
+    writeln!(rendered, "pub fn version() -> &'static str {{")?;
+    writeln!(rendered, "    VERSION")?;
     writeln!(rendered, "}}")?;
     writeln!(rendered)?;
-    writeln!(rendered, "#[must_use]")?;
     writeln!(
         rendered,
-        "pub fn registry_agent_server(id: &str) -> Option<RegistryAgentServer> {{"
+        "/// Resolves an official ACP registry id and returns a typed lookup error on"
     )?;
-    writeln!(rendered, "    generated_agent_server(id)")?;
+    writeln!(rendered, "/// failure.")?;
+    writeln!(rendered, "///")?;
+    writeln!(rendered, "/// # Errors")?;
+    writeln!(rendered, "///")?;
+    writeln!(
+        rendered,
+        "/// Returns [`Error::UnknownServer`] when the generated catalog does not"
+    )?;
+    writeln!(rendered, "/// contain the requested id.")?;
+    writeln!(
+        rendered,
+        "pub fn require(id: &str) -> Result<Server, Error> {{"
+    )?;
+    writeln!(
+        rendered,
+        "    get(id).ok_or_else(|| Error::UnknownServer {{ id: id.to_owned() }})"
+    )?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+    writeln!(
+        rendered,
+        "/// Resolves the current host into a known ACP registry target."
+    )?;
+    writeln!(rendered, "///")?;
+    writeln!(rendered, "/// # Errors")?;
+    writeln!(rendered, "///")?;
+    writeln!(
+        rendered,
+        "/// Returns [`Error::UnsupportedHostPlatform`] when the build host does not map"
+    )?;
+    writeln!(rendered, "/// to a supported registry target in v0.")?;
+    writeln!(
+        rendered,
+        "pub fn host_platform() -> Result<HostPlatform, Error> {{"
+    )?;
+    writeln!(
+        rendered,
+        "    HostPlatform::from_target(env::consts::OS, env::consts::ARCH)"
+    )?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+    writeln!(
+        rendered,
+        "/// Resolves the binary target for the current host when the server publishes"
+    )?;
+    writeln!(rendered, "/// binaries.")?;
+    writeln!(rendered, "///")?;
+    writeln!(rendered, "/// Package-backed servers return `Ok(None)`.")?;
+    writeln!(rendered, "///")?;
+    writeln!(rendered, "/// # Errors")?;
+    writeln!(rendered, "///")?;
+    writeln!(
+        rendered,
+        "/// Returns [`Error::UnsupportedHostPlatform`] when the current host is not"
+    )?;
+    writeln!(
+        rendered,
+        "/// mapped in v0, or [`Error::MissingBinaryTarget`] when the server publishes"
+    )?;
+    writeln!(
+        rendered,
+        "/// binaries but not for the current host target."
+    )?;
+    writeln!(
+        rendered,
+        "pub fn host_binary_target(server: &Server) -> Result<Option<&BinaryTarget>, Error> {{"
+    )?;
+    writeln!(rendered, "    binary_target_for(server, host_platform()?)")?;
+    writeln!(rendered, "}}")?;
+    writeln!(rendered)?;
+    writeln!(
+        rendered,
+        "/// Resolves the binary target for a specific host platform when the server"
+    )?;
+    writeln!(rendered, "/// publishes binaries.")?;
+    writeln!(rendered, "///")?;
+    writeln!(rendered, "/// Package-backed servers return `Ok(None)`.")?;
+    writeln!(rendered, "///")?;
+    writeln!(rendered, "/// # Errors")?;
+    writeln!(rendered, "///")?;
+    writeln!(
+        rendered,
+        "/// Returns [`Error::MissingBinaryTarget`] when the server publishes binaries"
+    )?;
+    writeln!(rendered, "/// but not for the requested host target.")?;
+    writeln!(rendered, "pub fn binary_target_for(")?;
+    writeln!(rendered, "    server: &Server,")?;
+    writeln!(rendered, "    platform: HostPlatform,")?;
+    writeln!(rendered, ") -> Result<Option<&BinaryTarget>, Error> {{")?;
+    writeln!(
+        rendered,
+        "    let binary_targets = server.distribution().binary_targets();"
+    )?;
+    writeln!(rendered, "    if binary_targets.is_empty() {{")?;
+    writeln!(rendered, "        return Ok(None);")?;
+    writeln!(rendered, "    }}")?;
+    writeln!(rendered)?;
+    writeln!(rendered, "    binary_targets")?;
+    writeln!(rendered, "        .iter()")?;
+    writeln!(
+        rendered,
+        "        .find(|target| target.target() == platform.registry_target())"
+    )?;
+    writeln!(rendered, "        .map_or_else(")?;
+    writeln!(rendered, "            || {{")?;
+    writeln!(
+        rendered,
+        "                Err(Error::MissingBinaryTarget {{"
+    )?;
+    writeln!(rendered, "                    id: server.id().to_owned(),")?;
+    writeln!(
+        rendered,
+        "                    target: platform.registry_target().to_owned(),"
+    )?;
+    writeln!(rendered, "                }})")?;
+    writeln!(rendered, "            }},")?;
+    writeln!(rendered, "            |target| Ok(Some(target)),")?;
+    writeln!(rendered, "        )")?;
     writeln!(rendered, "}}")?;
 
     Ok(())
@@ -497,13 +769,13 @@ fn render_agent_function(
     writeln!(rendered, "#[must_use]")?;
     writeln!(
         rendered,
-        "pub fn {}() -> GeneratedAgentServer {{",
+        "pub fn {}() -> Server {{",
         function_name(&agent.id)
     )?;
-    writeln!(rendered, "    GeneratedAgentServer {{")?;
+    writeln!(rendered, "    Server {{")?;
     write!(
         rendered,
-        "        metadata: AgentMetadata::new({}, {}, {})",
+        "        metadata: AgentServerMetadata::new({}, {}, {})",
         rust_string_literal(&agent.id),
         rust_string_literal(&agent.name),
         rust_string_literal(&agent.version)
@@ -534,7 +806,7 @@ fn render_agent_function(
         "        license: {}.to_owned(),",
         rust_string_literal(&agent.license)
     )?;
-    writeln!(rendered, "        distribution: GeneratedDistribution {{")?;
+    writeln!(rendered, "        distribution: Distribution {{")?;
     writeln!(
         rendered,
         "            binary: vec![{}],",
@@ -562,7 +834,7 @@ fn render_binary_targets(binary: &BTreeMap<String, BinaryTarget>) -> String {
     let mut rendered = Vec::new();
     for (target, details) in binary {
         rendered.push(format!(
-            "GeneratedBinaryTarget {{ target: {}.to_owned(), archive: {}.to_owned(), cmd: {}.to_owned() }}",
+            "BinaryTarget {{ target: {}.to_owned(), archive: {}.to_owned(), cmd: {}.to_owned() }}",
             rust_string_literal(target),
             rust_string_literal(&details.archive),
             rust_string_literal(&details.cmd),
@@ -592,7 +864,7 @@ fn render_package_distribution(package: Option<&PackageDistribution>, manager: &
         .join(", ");
 
     format!(
-        "Some(GeneratedPackageDistribution {{ manager: GeneratedPackageManager::{manager}, package: {}.to_owned(), args: vec![{args}], env: vec![{env}] }})",
+        "Some(PackageDistribution {{ manager: PackageManager::{manager}, package: {}.to_owned(), args: vec![{args}], env: vec![{env}] }})",
         rust_string_literal(&package.package)
     )
 }
@@ -645,16 +917,19 @@ mod tests {
         let second = render_registry_module(&registry).expect("second render should succeed");
 
         assert_eq!(first, second);
-        assert!(first.contains("pub const REGISTRY_VERSION: &str = \"1.0.0\";"));
-        assert!(first.contains("pub type RegistryAgentServer = GeneratedAgentServer;"));
-        assert!(first.contains("pub fn registry_agent_servers() -> Vec<RegistryAgentServer> {"));
+        assert!(first.contains("use std::env;"));
+        assert!(first.contains("pub enum Error {"));
+        assert!(first.contains("pub const VERSION: &str = \"1.0.0\";"));
+        assert!(first.contains("pub struct Server {"));
+        assert!(first.contains("pub fn all() -> Vec<Server> {"));
+        assert!(first.contains("pub fn get(id: &str) -> Option<Server> {"));
+        assert!(first.contains("pub fn version() -> &'static str {"));
+        assert!(first.contains("pub fn require(id: &str) -> Result<Server, Error> {"));
         assert!(first.contains("pub fn agent_alpha_agent()"));
         assert!(first.contains("pub fn agent_zeta_agent()"));
         assert!(first.contains("Self::Npx => &[\"--yes\"]"));
         assert!(first.contains("repository: None,"));
         assert!(first.find("pub fn agent_alpha_agent()") < first.find("pub fn agent_beta_agent()"));
-        assert!(
-            first.find("GeneratedPackageManager::Npx") < first.find("GeneratedPackageManager::Uvx")
-        );
+        assert!(first.find("PackageManager::Npx") < first.find("PackageManager::Uvx"));
     }
 }
