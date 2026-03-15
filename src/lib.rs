@@ -9,9 +9,11 @@ pub mod acpx;
 pub mod agent_server;
 pub mod agent_servers;
 pub mod error;
+pub mod registry;
 pub mod runtime;
 
 pub use crate::acpx::Connection;
 pub use crate::agent_server::{AgentMetadata, AgentServer, CommandAgentServer, CommandSpec};
 pub use crate::error::{Error, Result, UnsupportedLaunch};
+pub use crate::registry::{HostPlatform, RegistryError};
 pub use crate::runtime::{LocalTask, RuntimeContext, Task};
