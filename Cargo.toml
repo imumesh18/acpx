@@ -14,12 +14,23 @@ categories = ["api-bindings", "development-tools"]
 [lib]
 crate-type = ["lib"]
 
+[features]
+registry-sync-bin = ["dep:serde", "dep:serde_json", "dep:ureq"]
+
+[[bin]]
+name = "registry-sync"
+path = "src/bin/registry-sync.rs"
+required-features = ["registry-sync-bin"]
+
 [dependencies]
 agent-client-protocol = "0.10.2"
 async-process = "2.5.0"
 async-trait = "0.1"
 futures = "0.3.31"
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
 thiserror = "2.0"
+ureq = { version = "2.12.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.48", features = ["full"] }

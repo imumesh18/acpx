@@ -57,6 +57,9 @@ ref-clone url name='':
 ref-copy source name:
   ./scripts/ref-copy.sh {{source}} {{name}}
 
+registry-sync:
+  cargo run --bin registry-sync --features registry-sync-bin --
+
 publish-dry-run:
   cargo publish --locked --dry-run
 

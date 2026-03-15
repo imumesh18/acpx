@@ -7,6 +7,7 @@
 
 pub mod acpx;
 pub mod agent_server;
+pub mod agent_servers;
 pub mod error;
 pub mod runtime;
 
