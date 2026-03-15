@@ -18,6 +18,9 @@
 - Leave the codebase better than you found it.
 - Prefer simple code over clever code.
 - Plan and spec ACP behavior before implementing it.
+- Before `1.0.0`, prefer a better contract over preserving an early draft API.
+- Treat API sketches in planning docs as illustrative until the implementation
+  proves the final shape.
 - Write meaningful tests from the spec and add only the level of testing that
   buys real confidence.
 - Minimize third-party dependencies; copy or internalize code only when the

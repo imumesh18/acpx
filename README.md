@@ -7,11 +7,15 @@ The repo starts at version `0.0.1` as the first intentional release.
 
 ## Status
 
-- This repository is still in setup and planning mode.
-- We are writing the product contract and development workflow before starting
-  ACP feature implementation.
-- The current Rust code should be treated as provisional scaffolding, not as the
-  final public shape of the library.
+- This repository is in spec and planning mode for its first ACP-focused
+  release.
+- `SPEC.md` defines the intended crate contract and `PLAN.md` defines the
+  ordered work to get there.
+- ACP feature implementation has not started yet.
+- The current Rust code and any API sketches in docs should be treated as
+  provisional, not as the final public shape of the library.
+- Before `1.0.0`, breaking changes are acceptable if they produce a better
+  contract.
 
 ## Product Direction
 
@@ -22,6 +26,8 @@ The working direction for `acpx` is:
   ACP registry.
 - Better ergonomics for consumers than using the upstream pieces directly,
   while still staying close to the ACP model.
+- Stdio subprocess agents first; broader transport and installer stories are
+  deferred.
 - Intended for teams building CLI, TUI, desktop, and mobile apps, plus agent
   orchestration engines and broader agentic platforms.
 - Minimal dependencies, typed errors, and simple APIs that are easy to test and
@@ -38,13 +44,13 @@ These are the current primary references for planning:
 
 ## Current Scope
 
-The repo currently contains setup, release automation, and planning material.
-We are not committing to a stable ACP-facing API yet.
+The repo currently contains setup, release automation, reference checkouts, and
+planning material. We are not committing to a stable ACP-facing API yet.
 
 ## Not Yet For Use
 
 Do not consume `acpx` as a published SDK yet. Until the ACP-facing spec exists
-and the first intentional release is cut, this repo is a design and setup
+and the first intentional release is cut, this repo is a design and planning
 workspace.
 
 ## Future Installation
@@ -81,6 +87,9 @@ Common commands:
 - Prefer simple code over clever code.
 - Plan and spec first for ACP behavior; implementation follows the written
   contract.
+- Treat draft API sketches as intent, not as a compatibility promise.
+- Before `1.0.0`, prefer improving the contract over preserving a weak early
+  API.
 - Keep dependencies minimal and copy or internalize code only when the
   maintenance tradeoff is clearly better for the crate.
 - Write meaningful, spec-driven tests that cover the behavior we actually care
