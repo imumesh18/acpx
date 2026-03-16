@@ -38,8 +38,7 @@ jobs:
           name: devenv
 
       - name: Install devenv.sh
-        shell: bash
-        run: nix profile install nixpkgs#devenv
+        run: nix profile add nixpkgs#devenv
 
       - name: Select release ref
         if: github.event_name == 'workflow_dispatch'

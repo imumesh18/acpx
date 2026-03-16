@@ -18,8 +18,7 @@ jobs:
           name: devenv
 
       - name: Install devenv.sh
-        shell: bash
-        run: nix profile install nixpkgs#devenv
+        run: nix profile add nixpkgs#devenv
 
       - name: Run audit
         run: devenv --no-tui tasks run audit:check
