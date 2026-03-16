@@ -16,49 +16,56 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "lts/*"
+      - uses: cachix/install-nix-action@v31
 
-      - uses: ./.github/actions/setup-rust
+      - uses: cachix/cachix-action@v16
         with:
-          components: rustfmt clippy
-          tools: typos-cli cargo-nextest
-          cache-key: test
+          name: devenv
 
-      - run: typos
-      - run: cargo fmt --all -- --check
-      - run: npx --yes oxfmt@0.40.0 --no-error-on-unmatched-pattern --check "**/*.md" "**/*.toml" "**/*.yml" "**/*.yaml" "!CHANGELOG.md"
-      - run: cargo clippy --all-targets --all-features -- -D warnings
-      - run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked
-      - run: cargo nextest run --all --all-features --locked --no-tests pass
-      - run: cargo test --doc --all-features --locked
+      - name: Install devenv.sh
+        shell: bash
+        run: nix profile install nixpkgs#devenv
+
+      - name: Run devenv quality gate
+        run: devenv --no-tui tasks run quality:check
 
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/setup-rust
-        with:
-          cache-key: build
+      - uses: cachix/install-nix-action@v31
 
-      - run: cargo build --all --all-features --locked --release
+      - uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+
+      - name: Install devenv.sh
+        shell: bash
+        run: nix profile install nixpkgs#devenv
+
+      - name: Run release build
+        run: devenv --no-tui tasks run build:release
 
   msrv:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
+      - uses: cachix/install-nix-action@v31
+
+      - uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+
+      - name: Install devenv.sh
+        shell: bash
+        run: nix profile install nixpkgs#devenv
+
       - name: Determine MSRV
         id: msrv
-        run: |
-          rustup update stable && rustup default stable
-          echo "value=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].rust_version')" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: echo "value=$(sed -n 's/^rust-version = \"\\(.*\\)\"/\\1/p' Cargo.toml | head -n 1)" >> "$GITHUB_OUTPUT"
 
-      - uses: ./.github/actions/setup-rust
-        with:
-          toolchain: ${{ steps.msrv.outputs.value }}
-          cache-key: msrv-${{ steps.msrv.outputs.value }}
-
-      - run: cargo check --all-features --locked
+      - name: Run MSRV check
+        run: devenv --no-tui --option languages.rust.channel:string "${{ steps.msrv.outputs.value }}" tasks run msrv:check

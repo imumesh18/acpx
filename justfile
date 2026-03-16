@@ -1,70 +1,59 @@
-set shell := ["bash", "-euo", "pipefail", "-c"]
-
-oxfmt := "npx --yes oxfmt@0.40.0 --no-error-on-unmatched-pattern"
-oxfmt_paths := "\"**/*.md\" \"**/*.toml\" \"**/*.yml\" \"**/*.yaml\" \"!CHANGELOG.md\""
-
 default:
   @just --list
 
 fmt:
-  cargo fmt --all
-  {{oxfmt}} {{oxfmt_paths}}
+  devenv tasks run fmt:write
 
 fmt-check:
-  cargo fmt --all -- --check
-  {{oxfmt}} --check {{oxfmt_paths}}
+  devenv tasks run fmt:check
 
-clippy:
-  cargo clippy --all-targets --all-features -- -D warnings
+lint:
+  devenv tasks run lint:check
 
-doc:
-  RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked
+lint-fix:
+  devenv tasks run lint:fix
 
-nextest:
-  cargo nextest run --all --all-features --locked --no-tests pass
+test:
+  devenv tasks run test:check
 
-doctest:
-  cargo test --doc --all-features --locked
-
-example-test:
-  cargo test --example cli --all-features --locked
+example name:
+  devenv tasks run --input name={{ quote(name) }} example:check
 
 audit:
-  cargo deny check
+  devenv tasks run audit:check
 
 build:
-  cargo build --all --all-features --locked
+  devenv tasks run build:debug
 
-typos:
-  typos
+doc:
+  devenv tasks run doc:build
 
-ci:
-  ./scripts/quality-gates.sh
+quality:
+  devenv tasks run quality:check
+
+quality-fix:
+  devenv tasks run quality:fix
 
 changelog:
-  git cliff --config cliff.toml --output CHANGELOG.md
+  devenv tasks run changelog:update
 
 release-notes version='':
-  if [ -n "{{version}}" ]; then \
-    git cliff --config cliff.toml --tag "v{{version}}" --strip header; \
-  else \
-    git cliff --config cliff.toml --current --strip header; \
-  fi
+  devenv tasks run --show-output --input version={{ quote(version) }} release:notes
 
 next-version:
-  @git cliff --config cliff.toml --bumped-version | sed 's/^v//'
+  @devenv tasks run --show-output version:next
 
 ref-clone url name='':
-  ./scripts/ref-clone.sh {{url}} {{name}}
+  devenv tasks run --input url={{ quote(url) }} --input name={{ quote(name) }} ref:clone
 
 ref-copy source name:
-  ./scripts/ref-copy.sh {{source}} {{name}}
+  devenv tasks run --input source={{ quote(source) }} --input name={{ quote(name) }} ref:copy
 
 registry-sync:
-  cargo run --bin registry-sync --features registry-sync-bin --
+  devenv tasks run registry:sync
 
 publish-dry-run:
-  cargo publish --locked --dry-run
+  devenv tasks run --input dry_run=true publish:run
 
 release version='':
-  ./scripts/release.sh {{version}}
+  devenv tasks run --input version={{ quote(version) }} release:prepare

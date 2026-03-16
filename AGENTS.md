@@ -9,30 +9,38 @@ Read this file first.
 - `src/agent_server.rs`: handwritten launch contract and manual command server.
 - `src/agent_servers.rs`: generated agent-server catalog, metadata, and platform helpers.
 - `src/bin/registry-sync.rs`: registry snapshot generator.
+- `devenv.nix`: canonical shell packages, local command definitions, and task hooks.
 - `examples/cli.rs`: single-shot integration harness for real agents.
 - `docs/GETTING_STARTED.md`: user-facing setup and usage guide.
 - `docs/MAINTENANCE.md`: maintainer workflows and CI and release behavior.
-- `scripts/`: repo-local automation for quality gates, registry sync, and release preparation.
 - `.ref/`: ignored reference checkouts and copied upstream implementations.
 - `SPEC.md`: current public contract for the crate.
 - `PLAN.md`: forward-looking roadmap and open design work.
 
 ## Commands
 
-- `just ci`
-- `typos`
 - `just fmt`
 - `just fmt-check`
+- `just lint`
+- `just lint-fix`
+- `just test`
+- `just example cli`
+- `just quality`
+- `just quality-fix`
+- `just audit`
+- `just build`
+- `just doc`
+- `just changelog`
+- `just release-notes [version]`
+- `just next-version`
 - `just registry-sync`
-- `just example-test`
+- `just publish-dry-run`
+- `just release [version]`
 - `just ref-clone <url> [name]`
 - `just ref-copy <source> <name>`
-- `cargo clippy --all-targets --all-features -- -D warnings`
-- `cargo nextest run --all --all-features --locked --no-tests pass`
-- `cargo test --doc --all-features --locked`
-- `cargo test --example cli --all-features --locked`
-- `cargo deny check`
-- `cargo build --all --all-features --locked`
+- `devenv shell`
+- `devenv test`
+- `devenv tasks run quality:check`
 
 ## Rules
 

@@ -2,41 +2,53 @@
 
 ## Local Quality Gates
 
-Use `just ci` as the default local gate. It currently runs:
+Enter the repo shell with `devenv shell` or `direnv allow`. `just` is the
+human-facing command surface, and each recipe forwards to a `devenv` task so
+local runs and CI share the same environment and tooling.
 
-- `typos`
-- `cargo fmt --all -- --check`
-- Oxfmt checks for Markdown, TOML, and YAML
-- `cargo clippy --all-targets --all-features -- -D warnings`
+Use `just quality` as the default local gate. It runs:
+
+- `just fmt-check`
+- `just lint`
 - `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features --locked`
-- `cargo nextest run --all --all-features --locked --no-tests pass`
-- `cargo test --doc --all-features --locked`
-- `cargo test --example cli --all-features --locked`
-- `cargo deny check`
-- `cargo build --all --all-features --locked`
+- `just test`
+- `just example cli`
+- `just audit`
+- `just build`
+
+`devenv test` is the matching raw `devenv` entrypoint. It runs the quality gate
+and then the dedicated `test:check` task.
 
 Useful single-purpose commands:
 
 - `just fmt`
 - `just fmt-check`
+- `just lint`
+- `just lint-fix`
+- `just test`
+- `just example cli`
+- `just quality-fix`
+- `just changelog`
+- `just release-notes [version]`
+- `just next-version`
 - `just registry-sync`
-- `just example-test`
 - `just publish-dry-run`
+- `devenv test`
 
 ## CI Workflows
 
 GitHub Actions is split by responsibility:
 
-- `ci.yml` runs `typos`, Rust and Markdown formatting checks, clippy, rustdoc,
-  nextest, doctests, a release build, and the MSRV check.
-- `audit.yml` runs `cargo deny check`.
-- `publish.yml` verifies the release tag against `Cargo.toml`, checks that
-  `CHANGELOG.md` matches `git-cliff`, runs `cargo publish --locked --dry-run`,
-  renders release notes, and publishes to crates.io and GitHub Releases on a
-  real tag push.
+- `ci.yml` installs Nix, enables the public `devenv` Cachix cache, installs
+  `devenv`, runs `devenv tasks run quality:check`, runs a release build, and
+  runs the MSRV check by overriding the Rust channel from `Cargo.toml`.
+- `audit.yml` is reserved for scheduled or manual `cargo deny` runs through
+  `devenv` tasks.
+- `publish.yml` runs release validation, release note rendering, crates.io
+  publish, and GitHub Release updates through `devenv` tasks.
 
-The example CLI smoke test is part of the local `just ci` gate. It is not
-currently part of `ci.yml`.
+The example CLI smoke test is part of `just quality`, so it also runs via
+`devenv tasks run quality:check` in `ci.yml`.
 
 ## Registry Catalog Maintenance
 
