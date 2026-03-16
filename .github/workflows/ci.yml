@@ -65,7 +65,7 @@ jobs:
       - name: Determine MSRV
         id: msrv
         shell: bash
-        run: echo "value=$(sed -n 's/^rust-version = \"\\(.*\\)\"/\\1/p' Cargo.toml | head -n 1)" >> "$GITHUB_OUTPUT"
+        run: echo "value=$(sed -n 's/^rust-version = \"\(.*\)\"/\1/p' Cargo.toml | head -n 1)" >> "$GITHUB_OUTPUT"
 
       - name: Run MSRV check
         run: |
