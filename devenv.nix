@@ -10,10 +10,6 @@ in
 {
   languages = {
     rust.enable = true;
-    javascript = {
-      enable = true;
-      npm.enable = true;
-    };
   };
   packages = with pkgs; [
     cargo-deny
