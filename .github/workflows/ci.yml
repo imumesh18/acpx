@@ -68,4 +68,8 @@ jobs:
         run: echo "value=$(sed -n 's/^rust-version = \"\\(.*\\)\"/\\1/p' Cargo.toml | head -n 1)" >> "$GITHUB_OUTPUT"
 
       - name: Run MSRV check
-        run: devenv --no-tui --option languages.rust.channel:string "${{ steps.msrv.outputs.value }}" tasks run msrv:check
+        run: |
+          devenv --no-tui \
+            --option languages.rust.channel:string stable \
+            --option languages.rust.version:string "${{ steps.msrv.outputs.value }}" \
+            tasks run msrv:check

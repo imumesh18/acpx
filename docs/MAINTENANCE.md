@@ -5,6 +5,8 @@
 Enter the repo shell with `devenv shell` or `direnv allow`. `just` is the
 human-facing command surface, and each recipe forwards to a `devenv` task so
 local runs and CI share the same environment and tooling.
+`devenv.nix` owns repo behavior, while `devenv.yaml` and `devenv.lock` pin the
+upstream inputs used to build that environment.
 
 Use `just quality` as the default local gate. It runs:
 
@@ -41,7 +43,8 @@ GitHub Actions is split by responsibility:
 
 - `ci.yml` installs Nix, enables the public `devenv` Cachix cache, installs
   `devenv`, runs `devenv tasks run quality:check`, runs a release build, and
-  runs the MSRV check by overriding the Rust channel from `Cargo.toml`.
+  runs the MSRV check by overriding the Rust toolchain version derived from
+  `Cargo.toml`.
 - `audit.yml` is reserved for scheduled or manual `cargo deny` runs through
   `devenv` tasks.
 - `publish.yml` runs release validation, release note rendering, crates.io

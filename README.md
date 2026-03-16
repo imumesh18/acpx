@@ -68,7 +68,8 @@ Enter the repo shell with `devenv shell` or `direnv allow`, then use
 `just quality` for the default local gate and `just quality-fix` when you want
 to apply auto-fixable formatting, spelling, and clippy suggestions before
 re-running the full checks. If you want the raw `devenv` entrypoint instead of
-the `just` wrapper, use `devenv test`.
+the `just` wrapper, use `devenv test`; it runs the quality gate and then the
+dedicated test task.
 
 ## Current Scope
 

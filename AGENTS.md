@@ -10,6 +10,7 @@ Read this file first.
 - `src/agent_servers.rs`: generated agent-server catalog, metadata, and platform helpers.
 - `src/bin/registry-sync.rs`: registry snapshot generator.
 - `devenv.nix`: canonical shell packages, local command definitions, and task hooks.
+- `devenv.yaml` and `devenv.lock`: pinned `devenv` inputs such as `nixpkgs` and `rust-overlay`.
 - `examples/cli.rs`: single-shot integration harness for real agents.
 - `docs/GETTING_STARTED.md`: user-facing setup and usage guide.
 - `docs/MAINTENANCE.md`: maintainer workflows and CI and release behavior.
@@ -41,6 +42,7 @@ Read this file first.
 - `devenv shell`
 - `devenv test`
 - `devenv tasks run quality:check`
+- `devenv --option languages.rust.channel:string stable --option languages.rust.version:string <exact-msrv> tasks run msrv:check`
 
 ## Rules
 
