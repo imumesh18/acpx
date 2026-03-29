@@ -23,7 +23,7 @@ path = "src/bin/registry-sync.rs"
 required-features = ["registry-sync-bin"]
 
 [dependencies]
-agent-client-protocol = "0.10.2"
+agent-client-protocol = "0.10.3"
 async-process = "2.5.0"
 async-trait = "0.1"
 futures = "0.3.31"
