@@ -5,3 +5,8 @@
 /.ref
 /.devenv/
 /.jj
+
+# Local environment files (may contain secrets)
+.env
+.env.*
+!.env.example
